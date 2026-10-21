@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex,nofollow">
+<title>Frota de Entrega · Sinfel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#EDF0F3; --surface:#FFFFFF; --surface-2:#F4F6F8; --fg:#14202B; --muted:#586876; --line:#D3DAE1;
+  --accent:#0F4C75; --accent-fg:#FFFFFF; --accent-soft:#E1EEF7;
+  --ok:#1B7443; --ok-bg:#E1F2E8; --warn:#8F5A00; --warn-bg:#FFEFD0; --bad:#B3261E; --bad-bg:#FCE4E1;
+  --plate-bg:#FFFFFF; --plate-fg:#111111; --plate-band:#1F4FA3;
+  --font-display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --font-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0D141A; --surface:#16202A; --surface-2:#1B2733; --fg:#E6ECF1; --muted:#92A2B0; --line:#2A3846;
+    --accent:#62B3EA; --accent-fg:#06202F; --accent-soft:#12303F;
+    --ok:#5CD08C; --ok-bg:#12301F; --warn:#F2B94B; --warn-bg:#392B0B; --bad:#FF8F85; --bad-bg:#3E1613;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.45;
+  padding-block:max(20px,env(safe-area-inset-top,0px)) calc(56px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+[hidden]{display:none!important}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.05}
+h1{font-size:34px;letter-spacing:.04em;text-transform:uppercase;font-weight:700}
+h2{font-size:24px;letter-spacing:.03em;text-transform:uppercase;font-weight:700}
+h3{font-size:20px;letter-spacing:.02em;font-weight:600}
+p{margin:0}
+.sub{color:var(--muted);margin-top:6px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.label-up{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* topo */
+.topbar{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-start;justify-content:space-between}
+.who{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:13px;color:var(--muted);min-width:0}
+.who b{color:var(--fg);font-size:14px}
+.who .btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:4px;background:var(--accent-soft);color:var(--accent);margin-left:6px}
+
+/* login */
+.login-wrap{min-height:calc(100vh - 80px);display:flex;align-items:center;justify-content:center}
+.login{width:100%;max-width:380px;display:flex;flex-direction:column;gap:18px}
+.login form{display:flex;flex-direction:column;gap:14px}
+.login .brand{display:flex;flex-direction:column;gap:6px}
+.login-msg{color:var(--bad);font-weight:500;min-height:1.3em}
+
+/* abas */
+nav.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:thin}
+nav.tabs button{background:none;border:0;color:var(--muted);font:600 15px var(--font-body);padding:10px 14px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;margin-bottom:-1px}
+nav.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+nav.tabs button:hover{color:var(--fg)}
+section.view{display:flex;flex-direction:column;gap:18px;min-width:0}
+.head-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.head-row .btns{display:flex;flex-wrap:wrap;gap:8px}
+
+/* botões */
+.btn{font:600 14px var(--font-body);border-radius:6px;padding:9px 14px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.armed,.btn.danger.armed{background:var(--bad);color:#fff;border-color:var(--bad)}
+.btn.small{padding:6px 10px;font-size:13px}
+.btn.block{width:100%;padding:12px 14px;font-size:16px}
+.btn:disabled{opacity:.55;cursor:default}
+.link{background:none;border:0;color:var(--accent);font:600 13px var(--font-body);cursor:pointer;padding:4px 2px}
+.link.danger{color:var(--bad)}
+.link.armed{background:var(--bad);color:#fff;padding:4px 8px;border-radius:4px}
+
+/* resumo */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.stat b{font:700 30px var(--font-display);letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.stat.alert b{color:var(--bad)}
+.stat.alert.zero b{color:var(--ok)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.card > h3{margin-bottom:12px}
+
+/* placa */
+.plate{display:inline-flex;flex-direction:column;background:var(--plate-bg);color:var(--plate-fg);border:1.5px solid var(--plate-fg);border-radius:5px;overflow:hidden;font-family:var(--font-display);font-weight:700;letter-spacing:.09em;line-height:1;flex:none}
+.plate::before{content:"BRASIL";background:var(--plate-band);color:#fff;font:600 7px/1 var(--font-body);letter-spacing:.24em;text-align:center;padding:2px 6px}
+.plate span{padding:3px 9px 2px;font-size:21px;text-align:center}
+.plate.sm span{font-size:16px;padding:2px 7px 1px}
+.plate.sm::before{font-size:6px;padding:1px 4px}
+
+/* status */
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:8px;height:8px;background:currentColor}
+.pill.ok{color:var(--ok);background:var(--ok-bg)} .pill.ok::before{border-radius:50%}
+.pill.warn{color:var(--warn);background:var(--warn-bg)} .pill.warn::before{clip-path:polygon(50% 0,100% 100%,0 100%)}
+.pill.bad{color:var(--bad);background:var(--bad-bg)} .pill.bad::before{border-radius:1px}
+.pill.none{color:var(--muted);background:var(--surface-2)} .pill.none::before{border-radius:50%;background:none;border:1.5px solid currentColor;width:7px;height:7px}
+
+.alerts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.alerts li{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:11px 0;border-top:1px solid var(--line)}
+.alerts li:first-child{border-top:0;padding-top:0}
+.alerts .what{flex:1 1 220px;min-width:0}
+.alerts .what b{display:block}
+.note{background:var(--accent-soft);border-radius:8px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between}
+.note p{flex:1 1 260px;min-width:0}
+.empty{border:1.5px dashed var(--line);border-radius:8px;padding:22px 16px;color:var(--muted);text-align:center}
+.empty b{display:block;color:var(--fg);margin-bottom:4px}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{padding:10px 12px;text-align:left;border-top:1px solid var(--line);vertical-align:middle;font-variant-numeric:tabular-nums}
+thead th{border-top:0;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);font-weight:600;white-space:nowrap}
+td.r,th.r{text-align:right}
+tbody tr:hover{background:var(--surface-2)}
+
+.motos{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.moto{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.moto.off{background:var(--surface-2)}
+.moto-top{display:flex;gap:12px;align-items:center;min-width:0}
+.moto-id{min-width:0}
+.moto-id p{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0}
+.facts div{min-width:0}
+.facts dt{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.facts dd{margin:2px 0 0;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:13px}
+.docs{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:10px 0 0;font-size:13px}
+.docs dt{color:var(--muted)} .docs dd{margin:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
+
+.panel{background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.panel .panel-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
+form.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field.wide{grid-column:1/-1}
+.field label{font-size:12px;font-weight:600;color:var(--muted)}
+input[type=text],input[type=password],input[type=date],select{width:100%;font:16px var(--font-body);color:var(--fg);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:10px;min-width:0}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+.check{flex-direction:row;align-items:center;gap:8px;padding-top:22px}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.check label{font-size:14px;color:var(--fg)}
+.hint{font-size:12px;color:var(--muted);min-height:1.2em}
+.hint.warn{color:var(--warn)}
+.form-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sect-title{grid-column:1/-1;margin-top:4px;padding-top:12px;border-top:1px solid var(--line)}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.filters select{width:auto;min-width:200px}
+.svc-group{display:flex;flex-direction:column;gap:10px}
+.svc-group > header{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;max-width:calc(100vw - 32px);z-index:20;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+#toast.err{background:var(--bad);color:#fff}
+.banner{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:12px 14px;font-weight:500}
+body:not(.is-admin) .admin-only{display:none!important}
+@media (max-width:520px){
+  h1{font-size:28px}
+  .facts{grid-template-columns:1fr 1fr}
+  .who{align-items:flex-start}
+  .who .btns{justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ========== ENTRAR ========== -->
+  <div id="login-screen" hidden>
+    <div class="login-wrap">
+      <div class="login">
+        <div class="brand">
+          <h1>Frota de Entrega</h1>
+          <p class="sub">Sinfel · motos de entrega</p>
+        </div>
+        <form id="form-login" autocomplete="on">
+          <div class="field"><label for="l-user">Usuário</label>
+            <input type="text" id="l-user" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required></div>
+          <div class="field"><label for="l-pass">Senha</label>
+            <input type="password" id="l-pass" name="password" autocomplete="current-password" required></div>
+          <p class="login-msg" id="login-msg" role="alert"></p>
+          <button class="btn primary block" type="submit" id="l-btn">Entrar</button>
+        </form>
+        <p class="small muted">Não tem acesso ou esqueceu a senha? Fale com o administrador do sistema.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SISTEMA ========== -->
+  <div id="app" hidden>
+    <header class="topbar">
+      <div>
+        <h1>Frota de Entrega</h1>
+        <p class="sub">Abastecimento, troca de óleo e demais manutenções.</p>
+      </div>
+      <div class="who">
+        <span><b id="who-nome"></b><span class="badge" id="who-papel"></span></span>
+        <div class="btns">
+          <button class="btn small" type="button" data-act="open-senha">Alterar senha</button>
+          <button class="btn small" type="button" data-act="sair">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="panel" id="panel-senha" hidden>
+      <div class="panel-head"><h3>Alterar minha senha</h3><button class="link" data-act="close-senha" type="button">Fechar</button></div>
+      <form class="grid" id="form-senha" autocomplete="off">
+        <div class="field"><label for="s-nova">Nova senha</label><input type="password" id="s-nova" autocomplete="new-password" minlength="6" required></div>
+        <div class="field"><label for="s-conf">Repita a nova senha</label><input type="password" id="s-conf" autocomplete="new-password" minlength="6" required></div>
+        <div class="form-actions"><button class="btn primary" type="submit">Salvar senha</button><span class="hint">Mínimo de 6 caracteres.</span></div>
+      </form>
+    </div>
+
+    <div id="banner" class="banner" hidden></div>
+
+    <nav class="tabs" role="tablist" aria-label="Seções">
+      <button role="tab" id="tab-painel" data-act="tab" data-tab="painel" aria-selected="true">Painel</button>
+      <button role="tab" id="tab-abast" data-act="tab" data-tab="abast" aria-selected="false">Abastecimento</button>
+      <button role="tab" id="tab-manut" data-act="tab" data-tab="manut" aria-selected="false">Manutenção</button>
+      <button role="tab" id="tab-motos" data-act="tab" data-tab="motos" aria-selected="false">Motos</button>
+      <button role="tab" class="admin-only" id="tab-ajustes" data-act="tab" data-tab="ajustes" aria-selected="false">Intervalos</button>
+      <button role="tab" class="admin-only" id="tab-usuarios" data-act="tab" data-tab="usuarios" aria-selected="false">Usuários</button>
+    </nav>
+
+    <!-- PAINEL -->
+    <section class="view" id="view-painel">
+      <div class="head-row">
+        <h2>Situação da frota</h2>
+        <div class="btns">
+          <button class="btn primary" data-act="open-abast" type="button">Registrar abastecimento</button>
+          <button class="btn" data-act="open-manut" type="button">Registrar manutenção</button>
+        </div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div id="nudge"></div>
+      <div class="card"><h3>Manutenções a fazer</h3><div id="alerts"></div></div>
+      <div><h3 style="margin-bottom:10px">Frota</h3><div id="fleet-table"></div></div>
+    </section>
+
+    <!-- MOTOS -->
+    <section class="view" id="view-motos" hidden>
+      <div class="head-row">
+        <h2>Motos</h2>
+        <div class="btns admin-only"><button class="btn primary" data-act="open-moto" type="button">Cadastrar moto</button></div>
+      </div>
+
+      <div class="panel admin-only" id="panel-moto" hidden>
+        <div class="panel-head"><h3 id="moto-form-title">Cadastrar moto</h3><button class="link" data-act="close-moto" type="button">Fechar</button></div>
+        <form class="grid" id="form-moto" autocomplete="off">
+          <input type="hidden" id="m-id">
+          <div class="field"><label for="m-placa">Placa</label><input type="text" id="m-placa" maxlength="8" required placeholder="ABC1D23" style="text-transform:uppercase"></div>
+          <div class="field"><label for="m-apelido">Apelido (opcional)</label><input type="text" id="m-apelido" placeholder="ex.: Moto da loja 1"></div>
+          <div class="field"><label for="m-marca">Marca</label><input type="text" id="m-marca" required placeholder="Honda"></div>
+          <div class="field"><label for="m-modelo">Modelo</label><input type="text" id="m-modelo" required placeholder="CG 125 Fan KS"></div>
+          <div class="field"><label for="m-anofab">Ano de fabricação</label><input type="text" id="m-anofab" inputmode="numeric" maxlength="4"></div>
+          <div class="field"><label for="m-anomod">Ano do modelo</label><input type="text" id="m-anomod" inputmode="numeric" maxlength="4"></div>
+          <div class="field"><label for="m-cor">Cor</label><input type="text" id="m-cor"></div>
+          <div class="field"><label for="m-comb">Combustível</label><input type="text" id="m-comb" value="Gasolina"></div>
+          <div class="field"><label for="m-km">Km do odômetro hoje</label><input type="text" id="m-km" inputmode="numeric" placeholder="ex.: 48200"><span class="hint">Ponto de partida para os alertas.</span></div>
+          <div class="sect-title label-up">Dados do documento (CRLV)</div>
+          <div class="field"><label for="m-renavam">Renavam</label><input type="text" id="m-renavam" inputmode="numeric"></div>
+          <div class="field"><label for="m-chassi">Chassi</label><input type="text" id="m-chassi" style="text-transform:uppercase"></div>
+          <div class="field"><label for="m-motor">Motor</label><input type="text" id="m-motor" style="text-transform:uppercase"></div>
+          <div class="field"><label for="m-cat">Categoria</label><input type="text" id="m-cat" placeholder="Particular, Aluguel…"></div>
+          <div class="field"><label for="m-prop">Proprietário</label><input type="text" id="m-prop"></div>
+          <div class="field"><label for="m-doc">CNPJ / CPF</label><input type="text" id="m-doc"></div>
+          <div class="form-actions"><button class="btn primary" type="submit" id="m-save">Salvar moto</button><button class="btn" type="button" data-act="close-moto">Cancelar</button></div>
+        </form>
+      </div>
+
+      <div class="panel admin-only" id="panel-ret" hidden>
+        <div class="panel-head"><h3 id="ret-title">Retirar da frota</h3><button class="link" data-act="close-ret" type="button">Fechar</button></div>
+        <p class="muted small">A moto sai das listas de registro e dos alertas. Abastecimentos e manutenções antigos ficam guardados, e dá para reativá-la depois.</p>
+        <form class="grid" id="form-ret">
+          <input type="hidden" id="r-id">
+          <div class="field"><label for="r-motivo">Motivo</label>
+            <select id="r-motivo"><option>Vendida</option><option>Baixada / sem condições de uso</option><option>Devolvida</option><option>Outro</option></select></div>
+          <div class="field"><label for="r-data">Data</label><input type="date" id="r-data" required></div>
+          <div class="field wide"><label for="r-obs">Observação (opcional)</label><input type="text" id="r-obs"></div>
+          <div class="form-actions">
+            <button class="btn primary" type="submit" id="r-submit">Retirar da frota</button>
+            <button class="btn" type="button" data-act="close-ret">Cancelar</button>
+            <button class="btn danger small" type="button" id="r-excluir" data-act="excluir-moto" style="margin-left:auto">Excluir definitivamente</button>
+          </div>
+          <p class="hint field wide" id="r-excluir-hint"></p>
+        </form>
+      </div>
+
+      <div id="motos-list"></div>
+      <div id="motos-off"></div>
+    </section>
+
+    <!-- ABASTECIMENTO -->
+    <section class="view" id="view-abast" hidden>
+      <div class="head-row">
+        <h2>Abastecimento</h2>
+        <div class="btns">
+          <button class="btn admin-only" data-act="export-abast" type="button">Exportar CSV</button>
+          <button class="btn primary" data-act="open-abast" type="button">Registrar abastecimento</button>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-abast" hidden>
+        <div class="panel-head"><h3>Novo abastecimento</h3><button class="link" data-act="close-abast" type="button">Fechar</button></div>
+        <form class="grid" id="form-abast" autocomplete="off">
+          <div class="field"><label for="a-moto">Moto</label><select id="a-moto" required></select></div>
+          <div class="field"><label for="a-data">Data</label><input type="date" id="a-data" required></div>
+          <div class="field"><label for="a-km">Km do odômetro</label><input type="text" id="a-km" inputmode="numeric" required placeholder="ex.: 48350"><span class="hint" id="a-km-hint"></span></div>
+          <div class="field"><label for="a-litros">Litros</label><input type="text" id="a-litros" inputmode="decimal" required placeholder="ex.: 6,5"></div>
+          <div class="field"><label for="a-valor">Valor total (R$)</label><input type="text" id="a-valor" inputmode="decimal" required placeholder="ex.: 39,90"><span class="hint" id="a-ppl"></span></div>
+          <div class="field"><label for="a-posto">Posto (opcional)</label><input type="text" id="a-posto"></div>
+          <div class="field check"><input type="checkbox" id="a-cheio" checked><label for="a-cheio">Encheu o tanque</label></div>
+          <div class="form-actions"><button class="btn primary" type="submit" id="a-save">Salvar abastecimento</button><button class="btn" type="button" data-act="close-abast">Cancelar</button>
+            <span class="hint">O consumo (km/l) é calculado entre dois abastecimentos com tanque cheio.</span></div>
+        </form>
+      </div>
+
+      <div class="filters"><label class="label-up" for="f-abast">Moto</label><select id="f-abast"></select></div>
+      <div id="abast-list"></div>
+    </section>
+
+    <!-- MANUTENÇÃO -->
+    <section class="view" id="view-manut" hidden>
+      <div class="head-row">
+        <h2>Manutenção</h2>
+        <div class="btns">
+          <button class="btn admin-only" data-act="export-manut" type="button">Exportar CSV</button>
+          <button class="btn primary" data-act="open-manut" type="button">Registrar manutenção</button>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-manut" hidden>
+        <div class="panel-head"><h3>Nova manutenção</h3><button class="link" data-act="close-manut" type="button">Fechar</button></div>
+        <form class="grid" id="form-manut" autocomplete="off">
+          <div class="field"><label for="t-moto">Moto</label><select id="t-moto" required></select></div>
+          <div class="field"><label for="t-tipo">Serviço</label><select id="t-tipo"></select></div>
+          <div class="field" id="t-outro-box" hidden><label for="t-outro">Descreva o serviço</label><input type="text" id="t-outro"></div>
+          <div class="field"><label for="t-data">Data</label><input type="date" id="t-data" required></div>
+          <div class="field"><label for="t-km">Km do odômetro</label><input type="text" id="t-km" inputmode="numeric" required><span class="hint" id="t-km-hint"></span></div>
+          <div class="field"><label for="t-custo">Custo (R$)</label><input type="text" id="t-custo" inputmode="decimal" placeholder="0,00"></div>
+          <div class="field"><label for="t-oficina">Oficina (opcional)</label><input type="text" id="t-oficina"></div>
+          <div class="field wide"><label for="t-obs">Observação (opcional)</label><input type="text" id="t-obs" placeholder="ex.: óleo 10W30, filtro trocado"></div>
+          <div class="form-actions"><button class="btn primary" type="submit" id="t-save">Salvar manutenção</button><button class="btn" type="button" data-act="close-manut">Cancelar</button>
+            <span class="hint">Lançamento antigo? Informe a data e o km da época e os alertas se ajustam.</span></div>
+        </form>
+      </div>
+
+      <div class="filters"><label class="label-up" for="f-manut">Moto</label><select id="f-manut"></select></div>
+      <div id="manut-status"></div>
+      <div><h3 style="margin-bottom:10px">Histórico</h3><div id="manut-list"></div></div>
+    </section>
+
+    <!-- INTERVALOS -->
+    <section class="view admin-only" id="view-ajustes" hidden>
+      <div class="head-row"><h2>Intervalos de manutenção</h2></div>
+      <p class="muted">Defina de quanto em quanto tempo cada serviço deve ser feito. Vale para todas as motos. O alerta dispara pelo que vencer primeiro, km ou meses. Deixe em branco o que não quiser controlar.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Serviço</th><th class="r">A cada (km)</th><th class="r">A cada (meses)</th></tr></thead>
+        <tbody id="ajustes-body"></tbody>
+      </table></div>
+      <div class="head-row" style="justify-content:flex-start">
+        <button class="btn primary" id="ajustes-save" type="button" data-act="save-ajustes">Salvar intervalos</button>
+        <button class="btn" type="button" data-act="reset-ajustes">Voltar aos valores iniciais</button>
+      </div>
+      <p class="hint">Os valores iniciais são uma sugestão para uso de entrega. Confira o manual da moto e ajuste.</p>
+    </section>
+
+    <!-- USUÁRIOS -->
+    <section class="view admin-only" id="view-usuarios" hidden>
+      <div class="head-row">
+        <h2>Usuários</h2>
+        <div class="btns"><button class="btn primary" data-act="open-usuario" type="button">Novo usuário</button></div>
+      </div>
+
+      <div class="panel" id="panel-usuario" hidden>
+        <div class="panel-head"><h3>Novo usuário</h3><button class="link" data-act="close-usuario" type="button">Fechar</button></div>
+        <form class="grid" id="form-usuario" autocomplete="off">
+          <div class="field"><label for="u-usuario">Usuário (para entrar)</label><input type="text" id="u-usuario" autocapitalize="none" required placeholder="ex.: joao"><span class="hint">Só letras, números, ponto e traço.</span></div>
+          <div class="field"><label for="u-nome">Nome</label><input type="text" id="u-nome" required placeholder="ex.: João da Silva"></div>
+          <div class="field"><label for="u-senha">Senha inicial</label><input type="password" id="u-senha" autocomplete="new-password" minlength="6" required><span class="hint">A pessoa pode trocar depois.</span></div>
+          <div class="field"><label for="u-papel">Perfil</label>
+            <select id="u-papel"><option value="funcionario">Funcionário (registra abastecimento e manutenção)</option><option value="admin">Administrador (acesso total)</option></select></div>
+          <div class="form-actions"><button class="btn primary" type="submit" id="u-save">Criar usuário</button><button class="btn" type="button" data-act="close-usuario">Cancelar</button></div>
+        </form>
+      </div>
+
+      <div id="usuarios-list"></div>
+      <p class="hint">Esqueceu a senha de alguém? Desative o usuário e crie outro com um novo nome de usuário, ou redefina a senha no painel do Supabase (Authentication → Users).</p>
+    </section>
+  </div>
+
+  <div id="setup" class="banner" hidden></div>
+</div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const dstr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const todayStr=()=>dstr(new Date());
+const parseD=s=>{const p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2])};
+const today=()=>parseD(todayStr());
+const fmtD=s=>s?s.split('-').reverse().join('/'):'—';
+const addMonths=(s,n)=>{const d=parseD(s);d.setMonth(d.getMonth()+n);return d};
+const dayDiff=(a,b)=>Math.round((a-b)/864e5);
+const nf0=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0});
+const nf1=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const nf2=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const brl=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const num=v=>{v=String(v==null?'':v).trim().replace(/\s/g,'');if(!v)return NaN;if(v.indexOf(',')>=0)v=v.replace(/\./g,'').replace(',','.');return Number(v)};
+const kmNum=v=>{const t=String(v==null?'':v).replace(/\D/g,'');return t?Number(t):NaN};
+
+const CFG=window.FROTA_CONFIG||{};
+let sb=null;
+
+const TIPOS=[
+  {k:'oleo',nome:'Troca de óleo',km:2000,meses:6},
+  {k:'corrente',nome:'Lubrificação da corrente',km:500,meses:1},
+  {k:'filtro_ar',nome:'Filtro de ar',km:6000,meses:12},
+  {k:'vela',nome:'Vela de ignição',km:8000,meses:12},
+  {k:'freio',nome:'Pastilhas / lonas de freio',km:8000,meses:12},
+  {k:'kit',nome:'Kit transmissão (corrente, coroa, pinhão)',km:20000,meses:null},
+  {k:'pneus',nome:'Pneus',km:15000,meses:24},
+  {k:'bateria',nome:'Bateria',km:null,meses:24},
+  {k:'revisao',nome:'Revisão geral',km:6000,meses:6},
+  {k:'outro',nome:'Outro serviço',km:null,meses:null}
+];
+const tipoMap=Object.fromEntries(TIPOS.map(t=>[t.k,t]));
+
+const S={motos:[],abast:[],manut:[],perfis:[],cfg:null,perfil:null,armed:null,ajustesDirty:false,loaded:false,loginMsg:''};
+const isAdmin=()=>!!S.perfil&&S.perfil.papel==='admin';
+
+/* ---------- utilidades ---------- */
+const ativas=()=>S.motos.filter(m=>m.status!=='retirada').sort((a,b)=>a.placa.localeCompare(b.placa));
+const retiradas=()=>S.motos.filter(m=>m.status==='retirada').sort((a,b)=>a.placa.localeCompare(b.placa));
+const motoById=id=>S.motos.find(m=>m.id===id);
+const perfilNome=id=>{const p=S.perfis.find(x=>x.id===id);return p?p.nome:''};
+const label=m=>((m.marca||'')+' '+(m.modelo||'')).trim();
+const tipoNome=r=>r.tipo==='outro'?(r.descricao||'Outro serviço'):(tipoMap[r.tipo]?tipoMap[r.tipo].nome:r.tipo);
+const canDel=r=>isAdmin()||(S.perfil&&r.usuario_id===S.perfil.id&&(Date.now()-new Date(r.criado_em).getTime())<864e5);
+
+function intervalos(){
+  const saved=(S.cfg&&S.cfg.itens)||{};
+  const out={};
+  TIPOS.forEach(t=>{const s=saved[t.k];out[t.k]=s?{km:s.km||null,meses:s.meses||null}:{km:t.km,meses:t.meses}});
+  return out;
+}
+function motoStats(m){
+  const f=S.abast.filter(x=>x.moto_id===m.id).sort((a,b)=>a.km-b.km||String(a.data).localeCompare(String(b.data)));
+  const mt=S.manut.filter(x=>x.moto_id===m.id);
+  const kms=[m.km_inicial].concat(f.map(x=>x.km),mt.map(x=>x.km)).filter(v=>typeof v==='number'&&isFinite(v));
+  const curKm=kms.length?Math.max.apply(null,kms):null;
+  let lastFull=null,acc=0,dist=0,lit=0;const cons={};
+  f.forEach(r=>{
+    if(lastFull!==null){
+      acc+=r.litros;
+      if(r.cheio){const d=r.km-lastFull;if(d>0&&acc>0){cons[r.id]=d/acc;dist+=d;lit+=acc}lastFull=r.km;acc=0}
+    }else if(r.cheio){lastFull=r.km;acc=0}
+  });
+  const lastFuel=f.length?f.slice().sort((a,b)=>String(b.data).localeCompare(String(a.data)))[0].data:null;
+  return {f,mt,curKm,cons,avg:lit>0?dist/lit:null,lastFuel};
+}
+function svcStatus(tipo,st){
+  const iv=intervalos()[tipo];
+  if(!iv||(!iv.km&&!iv.meses))return null;
+  const recs=st.mt.filter(x=>x.tipo===tipo).sort((a,b)=>String(b.data).localeCompare(String(a.data))||b.km-a.km);
+  const last=recs[0];
+  if(!last)return {tipo,iv,last:null,level:'none'};
+  let kmLeft=null,daysLeft=null,dueKm=null,dueDate=null;
+  if(iv.km){dueKm=last.km+iv.km;if(st.curKm!==null)kmLeft=dueKm-st.curKm}
+  if(iv.meses){const dd=addMonths(last.data,iv.meses);dueDate=dstr(dd);daysLeft=dayDiff(dd,today())}
+  let level='ok';
+  const kmWarn=iv.km?iv.km*0.15:0, dayWarn=iv.meses?Math.max(iv.meses*30*0.15,7):0;
+  if((kmLeft!==null&&kmLeft<=0)||(daysLeft!==null&&daysLeft<=0))level='bad';
+  else if((kmLeft!==null&&kmLeft<=kmWarn)||(daysLeft!==null&&daysLeft<=dayWarn))level='warn';
+  return {tipo,iv,last,level,kmLeft,daysLeft,dueKm,dueDate};
+}
+function svcText(s){
+  if(!s)return '';
+  if(!s.last)return 'Nenhum registro ainda';
+  const p=[];
+  if(s.kmLeft!==null)p.push(s.kmLeft<=0?nf0.format(-s.kmLeft)+' km além do prazo':'faltam '+nf0.format(s.kmLeft)+' km');
+  if(s.daysLeft!==null){
+    if(s.daysLeft<0)p.push(-s.daysLeft+(s.daysLeft===-1?' dia':' dias')+' de atraso');
+    else if(s.daysLeft===0)p.push('vence hoje');
+    else p.push('faltam '+s.daysLeft+(s.daysLeft===1?' dia':' dias')+' ('+fmtD(s.dueDate)+')');
+  }
+  if(!p.length&&s.dueKm!==null)p.push('próxima aos '+nf0.format(s.dueKm)+' km (informe o km atual)');
+  return p.join(' · ');
+}
+const PILL={ok:'Em dia',warn:'Atenção',bad:'Vencida',none:'Sem registro'};
+const pill=l=>'<span class="pill '+l+'">'+PILL[l]+'</span>';
+const plate=(p,sm)=>'<span class="plate'+(sm?' sm':'')+'"><span>'+esc(p)+'</span></span>';
+
+function toast(msg,err){
+  const t=$('#toast');t.textContent=msg;t.className=err?'err':'';t.hidden=false;
+  clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true},err?6000:3200);
+}
+function dbErr(error,fallback){
+  if(!error)return;
+  console.error(error);
+  const c=error.code||'';
+  if(c==='23505')toast('Já existe um registro igual (placa repetida).',true);
+  else if(c==='42501'||/row-level security/i.test(error.message||''))toast('Você não tem permissão para fazer isso.',true);
+  else if(c==='PGRST301'||/JWT/i.test(error.message||''))toast('Sua sessão expirou. Entre de novo.',true);
+  else toast(fallback||'Não foi possível salvar agora. Tente de novo.',true);
+}
+function arm(key){S.armed=key;renderAll();clearTimeout(arm._t);arm._t=setTimeout(()=>{if(S.armed===key){S.armed=null;renderAll()}},5000)}
+
+/* ---------- carregar dados ---------- */
+async function fetchAll(table,order){
+  const out=[];let from=0;const step=1000;
+  for(;;){
+    let q=sb.from(table).select('*').range(from,from+step-1);
+    if(order)q=q.order(order,{ascending:false});
+    const {data,error}=await q;
+    if(error)throw error;
+    out.push.apply(out,data);
+    if(data.length<step)break;
+    from+=step;
+  }
+  return out;
+}
+async function loadAll(){
+  try{
+    const [motos,abast,manut,perfis,cfg]=await Promise.all([
+      fetchAll('motos'),fetchAll('abastecimentos','data'),fetchAll('manutencoes','data'),fetchAll('perfis'),
+      sb.from('config_intervalos').select('*').eq('id',1).maybeSingle()
+    ]);
+    S.motos=motos;S.abast=abast;S.manut=manut;S.perfis=perfis;S.cfg=cfg.data||null;S.loaded=true;
+    $('#banner').hidden=true;
+  }catch(e){
+    console.error(e);
+    const b=$('#banner');b.hidden=false;b.textContent='Não consegui carregar os dados. Confira a internet e tente de novo.';
+    S.loaded=true;
+  }
+  renderAll();
+}
+
+/* ---------- renderização ---------- */
+const loadingBox='<div class="empty">Carregando…</div>';
+function renderAll(){
+  if(!S.perfil)return;
+  fillSelects();renderDash();renderMotos();renderAbast();renderManut();
+  if(isAdmin()){if(!S.ajustesDirty)renderAjustes();renderUsuarios()}
+}
+function renderDash(){
+  const as=ativas();
+  const mes=todayStr().slice(0,7);
+  const gComb=S.abast.filter(x=>String(x.data).startsWith(mes)&&motoById(x.moto_id)).reduce((s,x)=>s+(x.valor||0),0);
+  const gMan=S.manut.filter(x=>String(x.data).startsWith(mes)&&motoById(x.moto_id)).reduce((s,x)=>s+(x.custo||0),0);
+  const items=[];
+  as.forEach(m=>{const st=motoStats(m);TIPOS.forEach(t=>{const s=svcStatus(t.k,st);if(s&&(s.level==='bad'||s.level==='warn'))items.push({m,s})})});
+  items.sort((a,b)=>(a.s.level===b.s.level?0:a.s.level==='bad'?-1:1)||((a.s.kmLeft==null?1e9:a.s.kmLeft)-(b.s.kmLeft==null?1e9:b.s.kmLeft)));
+  const nBad=items.filter(i=>i.s.level==='bad').length;
+  $('#stats').innerHTML=
+    '<div class="stat"><span class="label-up">Motos ativas</span><b>'+as.length+'</b></div>'+
+    '<div class="stat alert'+(items.length?'':' zero')+'"><span class="label-up">Manutenções a fazer</span><b>'+items.length+'</b><span class="small muted">'+(nBad?nBad+' vencida'+(nBad>1?'s':''):'nada vencido')+'</span></div>'+
+    '<div class="stat"><span class="label-up">Combustível no mês</span><b>'+brl.format(gComb)+'</b></div>'+
+    '<div class="stat"><span class="label-up">Manutenção no mês</span><b>'+brl.format(gMan)+'</b></div>';
+
+  const semOleo=as.filter(m=>!S.manut.some(x=>x.moto_id===m.id&&x.tipo==='oleo'));
+  $('#nudge').innerHTML=(S.loaded&&as.length&&semOleo.length)?
+    '<div class="note"><p><b>Sem troca de óleo registrada:</b> '+semOleo.map(m=>esc(m.placa)).join(', ')+'. Lance a última troca (mesmo antiga) para os alertas passarem a valer.</p><button class="btn" type="button" data-act="open-manut" data-tipo="oleo" data-moto="'+esc(semOleo[0].id)+'">Registrar troca de óleo</button></div>':'';
+
+  if(!S.loaded){$('#alerts').innerHTML=loadingBox}
+  else if(!as.length){$('#alerts').innerHTML='<div class="empty"><b>Nenhuma moto na frota</b>'+(isAdmin()?'Cadastre a primeira na aba Motos.':'Peça ao administrador para cadastrar as motos.')+'</div>'}
+  else if(!items.length){$('#alerts').innerHTML='<div class="empty"><b>Tudo em dia</b>Nenhum serviço vencido ou perto de vencer.</div>'}
+  else $('#alerts').innerHTML='<ul class="alerts">'+items.map(i=>
+    '<li>'+plate(i.m.placa,true)+'<div class="what"><b>'+esc(tipoNome({tipo:i.s.tipo}))+'</b><span class="small muted">'+esc(svcText(i.s))+'</span></div>'+pill(i.s.level)+
+    '<button class="btn small" type="button" data-act="open-manut" data-moto="'+esc(i.m.id)+'" data-tipo="'+i.s.tipo+'">Registrar</button></li>').join('')+'</ul>';
+
+  if(!as.length){$('#fleet-table').innerHTML='';return}
+  $('#fleet-table').innerHTML='<div class="tablewrap"><table><thead><tr><th>Moto</th><th class="r">Km atual</th><th class="r">Consumo médio</th><th>Último abastecimento</th><th>Óleo</th></tr></thead><tbody>'+
+    as.map(m=>{const st=motoStats(m);const o=svcStatus('oleo',st);
+      return '<tr><td><div style="display:flex;gap:10px;align-items:center">'+plate(m.placa,true)+'<span>'+esc(m.apelido||label(m))+'</span></div></td>'+
+      '<td class="r">'+(st.curKm!==null?nf0.format(st.curKm)+' km':'<span class="muted">não informado</span>')+'</td>'+
+      '<td class="r">'+(st.avg?nf1.format(st.avg)+' km/l':'<span class="muted">—</span>')+'</td>'+
+      '<td>'+(st.lastFuel?fmtD(st.lastFuel):'<span class="muted">—</span>')+'</td>'+
+      '<td>'+(o?pill(o.level)+' <span class="small muted">'+(o.last&&o.kmLeft!==null?(o.kmLeft<=0?'vencida':nf0.format(o.kmLeft)+' km'):'')+'</span>':'')+'</td></tr>'}).join('')+'</tbody></table></div>';
+}
+
+function motoCard(m){
+  const st=motoStats(m);const o=svcStatus('oleo',st);
+  const off=m.status==='retirada';
+  return '<article class="moto'+(off?' off':'')+'">'+
+    '<div class="moto-top">'+plate(m.placa)+'<div class="moto-id"><h3>'+esc(m.apelido||label(m))+'</h3><p>'+(m.apelido?esc(label(m))+' · ':'')+esc([m.ano_fab&&m.ano_modelo?m.ano_fab+'/'+m.ano_modelo:(m.ano_fab||m.ano_modelo||''),m.cor].filter(Boolean).join(' · '))+'</p></div></div>'+
+    (off?'<p class="small muted">Retirada em '+fmtD(m.retirada_em)+' · '+esc(m.retirada_motivo||'')+(m.retirada_obs?' · '+esc(m.retirada_obs):'')+'</p>':
+    '<dl class="facts"><div><dt>Km atual</dt><dd>'+(st.curKm!==null?nf0.format(st.curKm):'—')+'</dd></div><div><dt>Consumo</dt><dd>'+(st.avg?nf1.format(st.avg)+' km/l':'—')+'</dd></div><div><dt>Óleo</dt><dd>'+(o?pill(o.level):'—')+'</dd></div></dl>')+
+    '<details><summary>Dados do documento</summary><dl class="docs">'+
+      '<dt>Renavam</dt><dd>'+esc(m.renavam||'—')+'</dd><dt>Chassi</dt><dd>'+esc(m.chassi||'—')+'</dd><dt>Motor</dt><dd>'+esc(m.motor||'—')+'</dd>'+
+      '<dt>Combustível</dt><dd>'+esc(m.combustivel||'—')+'</dd><dt>Categoria</dt><dd>'+esc(m.categoria||'—')+'</dd><dt>Proprietário</dt><dd>'+esc(m.proprietario||'—')+'</dd><dt>CNPJ / CPF</dt><dd>'+esc(m.doc||'—')+'</dd></dl></details>'+
+    '<div class="row-actions">'+
+      (off?'<span class="admin-only"><button class="btn small" type="button" data-act="reativar" data-id="'+esc(m.id)+'">Reativar</button> <button class="btn small danger" type="button" data-act="open-ret" data-id="'+esc(m.id)+'">Excluir…</button></span>'
+          :'<button class="btn small" type="button" data-act="open-abast" data-moto="'+esc(m.id)+'">Abastecer</button><button class="btn small" type="button" data-act="open-manut" data-moto="'+esc(m.id)+'">Manutenção</button><button class="btn small admin-only" type="button" data-act="open-moto" data-id="'+esc(m.id)+'">Editar</button><button class="btn small admin-only" type="button" data-act="open-ret" data-id="'+esc(m.id)+'">Retirar</button>')+
+    '</div></article>';
+}
+function renderMotos(){
+  const as=ativas(),rs=retiradas();
+  if(!S.loaded)$('#motos-list').innerHTML=loadingBox;
+  else $('#motos-list').innerHTML=as.length?'<div class="motos">'+as.map(motoCard).join('')+'</div>':'<div class="empty"><b>Nenhuma moto ativa</b>'+(isAdmin()?'Use “Cadastrar moto” para incluir a primeira.':'Peça ao administrador para cadastrar as motos.')+'</div>';
+  $('#motos-off').innerHTML=rs.length?'<h3 style="margin:6px 0 10px">Motos retiradas</h3><div class="motos">'+rs.map(motoCard).join('')+'</div>':'';
+}
+
+function renderAbast(){
+  const fid=$('#f-abast').value||'';
+  const rows=S.abast.filter(x=>!fid||x.moto_id===fid).sort((a,b)=>String(b.data).localeCompare(String(a.data))||b.km-a.km);
+  const cons={};S.motos.forEach(m=>Object.assign(cons,motoStats(m).cons));
+  if(!S.loaded){$('#abast-list').innerHTML=loadingBox;return}
+  if(!rows.length){$('#abast-list').innerHTML='<div class="empty"><b>Nenhum abastecimento registrado</b>Use “Registrar abastecimento” a cada vez que a moto abastecer.</div>';return}
+  const tot=rows.reduce((s,x)=>s+x.valor,0),lt=rows.reduce((s,x)=>s+x.litros,0);
+  $('#abast-list').innerHTML='<div class="tablewrap"><table><thead><tr><th>Data</th><th>Moto</th><th class="r">Km</th><th class="r">Litros</th><th class="r">R$/L</th><th class="r">Total</th><th class="r">km/l</th><th>Posto</th><th>Por</th><th></th></tr></thead><tbody>'+
+    rows.map(x=>{const m=motoById(x.moto_id);
+      return '<tr><td>'+fmtD(x.data)+'</td><td>'+(m?plate(m.placa,true):'<span class="muted">removida</span>')+'</td><td class="r">'+nf0.format(x.km)+'</td><td class="r">'+nf2.format(x.litros)+'</td><td class="r">'+nf2.format(x.valor/x.litros)+'</td><td class="r">'+brl.format(x.valor)+'</td>'+
+      '<td class="r">'+(cons[x.id]?nf1.format(cons[x.id]):'<span class="muted">'+(x.cheio?'—':'parcial')+'</span>')+'</td><td>'+esc(x.posto||'')+'</td><td class="small muted">'+esc(perfilNome(x.usuario_id))+'</td>'+
+      '<td class="r">'+(canDel(x)?'<button class="link danger'+(S.armed==='a:'+x.id?' armed':'')+'" type="button" data-act="del-abast" data-id="'+esc(x.id)+'">'+(S.armed==='a:'+x.id?'Confirmar':'Excluir')+'</button>':'')+'</td></tr>'}).join('')+
+    '</tbody><tfoot><tr><td colspan="3" class="muted small">'+rows.length+' registro'+(rows.length>1?'s':'')+'</td><td class="r"><b>'+nf2.format(lt)+'</b></td><td></td><td class="r"><b>'+brl.format(tot)+'</b></td><td colspan="4"></td></tr></tfoot></table></div>';
+}
+
+function renderManut(){
+  const fid=$('#f-manut').value||'';
+  const ms=ativas().filter(m=>!fid||m.id===fid);
+  if(!S.loaded){$('#manut-status').innerHTML=loadingBox;$('#manut-list').innerHTML='';return}
+  const iv=intervalos();
+  $('#manut-status').innerHTML=ms.length?ms.map(m=>{
+    const st=motoStats(m);
+    const rows=TIPOS.filter(t=>iv[t.k]&&(iv[t.k].km||iv[t.k].meses)).map(t=>{
+      const s=svcStatus(t.k,st);
+      const ultima=s.last?fmtD(s.last.data)+' · '+nf0.format(s.last.km)+' km':'—';
+      const prox=s.last?[s.dueKm!==null?nf0.format(s.dueKm)+' km':'',s.dueDate?fmtD(s.dueDate):''].filter(Boolean).join(' ou '):'—';
+      return '<tr><td>'+esc(t.nome)+'</td><td>'+ultima+'</td><td>'+prox+'</td><td>'+pill(s.level)+' <span class="small muted">'+esc(s.last?svcText(s):'')+'</span></td></tr>'}).join('');
+    return '<div class="svc-group"><header>'+plate(m.placa)+'<div><h3>'+esc(m.apelido||label(m))+'</h3><span class="small muted">'+(st.curKm!==null?'Km atual '+nf0.format(st.curKm):'Km atual não informado')+'</span></div></header>'+
+      '<div class="tablewrap"><table><thead><tr><th>Serviço</th><th>Última vez</th><th>Próxima</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'}).join(''):
+    '<div class="empty"><b>Nenhuma moto ativa</b>Não há motos para acompanhar.</div>';
+
+  const rows=S.manut.filter(x=>!fid||x.moto_id===fid).sort((a,b)=>String(b.data).localeCompare(String(a.data))||b.km-a.km);
+  $('#manut-list').innerHTML=rows.length?'<div class="tablewrap"><table><thead><tr><th>Data</th><th>Moto</th><th>Serviço</th><th class="r">Km</th><th class="r">Custo</th><th>Oficina</th><th>Por</th><th></th></tr></thead><tbody>'+
+    rows.map(x=>{const m=motoById(x.moto_id);
+      return '<tr><td>'+fmtD(x.data)+'</td><td>'+(m?plate(m.placa,true):'<span class="muted">removida</span>')+'</td><td>'+esc(tipoNome(x))+(x.obs?'<br><span class="small muted">'+esc(x.obs)+'</span>':'')+'</td><td class="r">'+nf0.format(x.km)+'</td><td class="r">'+(x.custo?brl.format(x.custo):'—')+'</td><td>'+esc(x.oficina||'')+'</td><td class="small muted">'+esc(perfilNome(x.usuario_id))+'</td>'+
+      '<td class="r">'+(canDel(x)?'<button class="link danger'+(S.armed==='m:'+x.id?' armed':'')+'" type="button" data-act="del-manut" data-id="'+esc(x.id)+'">'+(S.armed==='m:'+x.id?'Confirmar':'Excluir')+'</button>':'')+'</td></tr>'}).join('')+'</tbody></table></div>':
+    '<div class="empty"><b>Nenhuma manutenção registrada</b>Registre trocas de óleo e outros serviços para ativar os alertas.</div>';
+}
+
+function renderAjustes(){
+  const iv=intervalos();
+  $('#ajustes-body').innerHTML=TIPOS.filter(t=>t.k!=='outro').map(t=>
+    '<tr><td>'+esc(t.nome)+'</td><td class="r"><input type="text" inputmode="numeric" id="iv-km-'+t.k+'" value="'+(iv[t.k].km||'')+'" style="max-width:120px;text-align:right" aria-label="Km para '+esc(t.nome)+'"></td>'+
+    '<td class="r"><input type="text" inputmode="numeric" id="iv-me-'+t.k+'" value="'+(iv[t.k].meses||'')+'" style="max-width:100px;text-align:right" aria-label="Meses para '+esc(t.nome)+'"></td></tr>').join('');
+}
+
+function renderUsuarios(){
+  const ps=S.perfis.slice().sort((a,b)=>a.nome.localeCompare(b.nome));
+  $('#usuarios-list').innerHTML='<div class="tablewrap"><table><thead><tr><th>Nome</th><th>Usuário</th><th>Perfil</th><th>Situação</th><th></th></tr></thead><tbody>'+
+    ps.map(p=>{const eu=p.id===S.perfil.id;
+      return '<tr><td>'+esc(p.nome)+(eu?' <span class="small muted">(você)</span>':'')+'</td><td>'+esc(p.usuario)+'</td><td>'+(p.papel==='admin'?'Administrador':'Funcionário')+'</td>'+
+      '<td>'+(p.ativo?'<span class="pill ok">Ativo</span>':'<span class="pill bad">Desativado</span>')+'</td>'+
+      '<td class="r">'+(eu?'':
+        '<button class="link" type="button" data-act="toggle-ativo" data-id="'+esc(p.id)+'">'+(p.ativo?'Desativar':'Ativar')+'</button> '+
+        '<button class="link" type="button" data-act="toggle-papel" data-id="'+esc(p.id)+'">'+(p.papel==='admin'?'Tornar funcionário':'Tornar administrador')+'</button>')+'</td></tr>'}).join('')+'</tbody></table></div>';
+}
+
+function fillSelects(){
+  const as=ativas(), all=S.motos.slice().sort((a,b)=>a.placa.localeCompare(b.placa));
+  const opt=m=>'<option value="'+esc(m.id)+'">'+esc(m.placa)+' · '+esc(m.apelido||label(m))+'</option>';
+  [['#a-moto',as,false],['#t-moto',as,false],['#f-abast',all,true],['#f-manut',all,true]].forEach(a=>{
+    const el=$(a[0]);const v=el.value;
+    el.innerHTML=(a[2]?'<option value="">Todas as motos</option>':'')+(a[1].length?a[1].map(opt).join(''):(a[2]?'':'<option value="">Nenhuma moto cadastrada</option>'));
+    if(v&&[].some.call(el.options,o=>o.value===v))el.value=v;
+  });
+  const ts=$('#t-tipo');if(!ts.options.length)ts.innerHTML=TIPOS.map(t=>'<option value="'+t.k+'">'+esc(t.nome)+'</option>').join('');
+}
+
+/* ---------- abas e painéis ---------- */
+const TABS=['painel','abast','manut','motos','ajustes','usuarios'];
+function setTab(t){
+  if((t==='ajustes'||t==='usuarios')&&!isAdmin())t='painel';
+  TABS.forEach(k=>{$('#view-'+k).hidden=k!==t;$('#tab-'+k).setAttribute('aria-selected',k===t?'true':'false')});
+}
+function show(panel){const p=$(panel);p.hidden=false;p.scrollIntoView({block:'start',behavior:'smooth'})}
+function lastKmHint(selId,hintId){
+  const m=motoById($(selId).value);const h=$(hintId);
+  if(!m){h.textContent='';return}
+  const st=motoStats(m);h.textContent=st.curKm!==null?'Último km conhecido: '+nf0.format(st.curKm):'Ainda sem km registrado';
+  h.className='hint';
+}
+function openAbast(motoId){
+  setTab('abast');
+  $('#form-abast').reset();$('#a-data').value=todayStr();$('#a-cheio').checked=true;$('#a-ppl').textContent='';
+  fillSelects();if(motoId&&motoById(motoId))$('#a-moto').value=motoId;
+  lastKmHint('#a-moto','#a-km-hint');show('#panel-abast');$('#a-km').focus({preventScroll:true});
+}
+function openManut(motoId,tipo){
+  setTab('manut');
+  $('#form-manut').reset();$('#t-data').value=todayStr();
+  fillSelects();if(motoId&&motoById(motoId))$('#t-moto').value=motoId;
+  $('#t-tipo').value=tipo||'oleo';$('#t-outro-box').hidden=$('#t-tipo').value!=='outro';
+  lastKmHint('#t-moto','#t-km-hint');show('#panel-manut');$('#t-km').focus({preventScroll:true});
+}
+function openMoto(id){
+  if(!isAdmin())return;
+  setTab('motos');
+  $('#form-moto').reset();$('#m-id').value='';$('#m-comb').value='Gasolina';
+  const m=id&&motoById(id);
+  $('#moto-form-title').textContent=m?'Editar '+m.placa:'Cadastrar moto';
+  if(m){
+    $('#m-id').value=m.id;$('#m-placa').value=m.placa||'';$('#m-apelido').value=m.apelido||'';$('#m-marca').value=m.marca||'';$('#m-modelo').value=m.modelo||'';
+    $('#m-anofab').value=m.ano_fab||'';$('#m-anomod').value=m.ano_modelo||'';$('#m-cor').value=m.cor||'';$('#m-comb').value=m.combustivel||'';
+    $('#m-km').value=typeof m.km_inicial==='number'?m.km_inicial:'';$('#m-renavam').value=m.renavam||'';$('#m-chassi').value=m.chassi||'';$('#m-motor').value=m.motor||'';
+    $('#m-cat').value=m.categoria||'';$('#m-prop').value=m.proprietario||'';$('#m-doc').value=m.doc||'';
+  }
+  show('#panel-moto');
+}
+function openRet(id){
+  if(!isAdmin())return;
+  const m=motoById(id);if(!m)return;
+  setTab('motos');
+  $('#r-id').value=id;$('#r-data').value=todayStr();$('#r-obs').value='';$('#r-motivo').selectedIndex=0;
+  const off=m.status==='retirada';
+  $('#ret-title').textContent=off?'Excluir '+m.placa+' definitivamente':'Retirar '+m.placa+' da frota';
+  $('#r-submit').hidden=off;
+  $('#r-excluir').classList.remove('armed');$('#r-excluir-hint').textContent='';
+  show('#panel-ret');
+}
+
+/* ---------- gravação ---------- */
+async function busy(btn,fn){
+  if(btn)btn.disabled=true;
+  try{await fn()}finally{if(btn)btn.disabled=false}
+}
+
+$('#form-moto').addEventListener('submit',async e=>{
+  e.preventDefault();if(!isAdmin())return;
+  const placa=$('#m-placa').value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(placa)){toast('Placa inválida. Use o formato ABC1234 ou ABC1D23.',true);return}
+  const id=$('#m-id').value;
+  if(S.motos.some(m=>m.placa===placa&&m.id!==id)){toast('Já existe uma moto com a placa '+placa+'.',true);return}
+  const km=kmNum($('#m-km').value);
+  const data={placa,apelido:$('#m-apelido').value.trim(),marca:$('#m-marca').value.trim(),modelo:$('#m-modelo').value.trim(),
+    ano_fab:$('#m-anofab').value.trim(),ano_modelo:$('#m-anomod').value.trim(),cor:$('#m-cor').value.trim(),combustivel:$('#m-comb').value.trim(),
+    km_inicial:isFinite(km)?km:null,renavam:$('#m-renavam').value.trim(),chassi:$('#m-chassi').value.trim().toUpperCase(),motor:$('#m-motor').value.trim().toUpperCase(),
+    categoria:$('#m-cat').value.trim(),proprietario:$('#m-prop').value.trim(),doc:$('#m-doc').value.trim()};
+  await busy($('#m-save'),async()=>{
+    const r=id?await sb.from('motos').update(data).eq('id',id):await sb.from('motos').insert(data);
+    if(r.error){dbErr(r.error);return}
+    $('#panel-moto').hidden=true;toast(id?'Moto '+placa+' atualizada.':'Moto '+placa+' cadastrada.');await loadAll();
+  });
+});
+
+$('#form-ret').addEventListener('submit',async e=>{
+  e.preventDefault();if(!isAdmin())return;
+  const id=$('#r-id').value,m=motoById(id);if(!m)return;
+  await busy($('#r-submit'),async()=>{
+    const r=await sb.from('motos').update({status:'retirada',retirada_em:$('#r-data').value,retirada_motivo:$('#r-motivo').value,retirada_obs:$('#r-obs').value.trim()||null}).eq('id',id);
+    if(r.error){dbErr(r.error);return}
+    $('#panel-ret').hidden=true;toast(m.placa+' saiu da frota.');await loadAll();
+  });
+});
+
+async function excluirMoto(){
+  if(!isAdmin())return;
+  const id=$('#r-id').value,m=motoById(id);if(!m)return;
+  const b=$('#r-excluir');
+  if(!b.classList.contains('armed')){
+    const n=S.abast.filter(x=>x.moto_id===id).length+S.manut.filter(x=>x.moto_id===id).length;
+    b.classList.add('armed');$('#r-excluir-hint').textContent='Isso apaga '+m.placa+' e '+n+' registro'+(n===1?'':'s')+' de abastecimento e manutenção. Clique de novo para confirmar.';
+    return;
+  }
+  await busy(b,async()=>{
+    const r=await sb.from('motos').delete().eq('id',id);
+    if(r.error){dbErr(r.error);return}
+    $('#panel-ret').hidden=true;toast(m.placa+' excluída.');await loadAll();
+  });
+}
+
+$('#form-abast').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const moto_id=$('#a-moto').value;if(!moto_id){toast('Escolha a moto.',true);return}
+  const km=kmNum($('#a-km').value),litros=num($('#a-litros').value),valor=num($('#a-valor').value);
+  if(!(km>0)){toast('Informe o km do odômetro.',true);return}
+  if(!(litros>0)){toast('Informe os litros abastecidos.',true);return}
+  if(!(valor>0)){toast('Informe o valor total pago.',true);return}
+  await busy($('#a-save'),async()=>{
+    const r=await sb.from('abastecimentos').insert({moto_id,data:$('#a-data').value,km,litros,valor,posto:$('#a-posto').value.trim(),cheio:$('#a-cheio').checked});
+    if(r.error){dbErr(r.error);return}
+    $('#panel-abast').hidden=true;toast('Abastecimento salvo.');await loadAll();
+  });
+});
+$('#form-manut').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const moto_id=$('#t-moto').value;if(!moto_id){toast('Escolha a moto.',true);return}
+  const tipo=$('#t-tipo').value,km=kmNum($('#t-km').value),custoRaw=$('#t-custo').value.trim(),custo=custoRaw?num(custoRaw):0;
+  if(!isFinite(km)){toast('Informe o km do odômetro.',true);return}
+  if(!isFinite(custo)||custo<0){toast('Custo inválido.',true);return}
+  if(tipo==='outro'&&!$('#t-outro').value.trim()){toast('Descreva o serviço.',true);return}
+  await busy($('#t-save'),async()=>{
+    const r=await sb.from('manutencoes').insert({moto_id,tipo,descricao:tipo==='outro'?$('#t-outro').value.trim():'',data:$('#t-data').value,km,custo,oficina:$('#t-oficina').value.trim(),obs:$('#t-obs').value.trim()});
+    if(r.error){dbErr(r.error);return}
+    $('#panel-manut').hidden=true;toast('Manutenção salva.');await loadAll();
+  });
+});
+
+async function saveAjustes(){
+  if(!isAdmin())return;
+  const itens={};
+  for(const t of TIPOS.filter(t=>t.k!=='outro')){
+    const km=$('#iv-km-'+t.k).value.trim(),me=$('#iv-me-'+t.k).value.trim();
+    const k=km?kmNum(km):null,m=me?kmNum(me):null;
+    if((km&&!(k>0))||(me&&!(m>0))){toast('Use apenas números maiores que zero em '+t.nome+'.',true);return}
+    itens[t.k]={km:k,meses:m};
+  }
+  await busy($('#ajustes-save'),async()=>{
+    const r=await sb.from('config_intervalos').upsert({id:1,itens});
+    if(r.error){dbErr(r.error);return}
+    S.ajustesDirty=false;toast('Intervalos salvos.');await loadAll();
+  });
+}
+
+/* ---------- usuários ---------- */
+const userToEmail=u=>{
+  const s=String(u||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9._-]/g,'');
+  return s?s+'@'+(CFG.EMAIL_DOMAIN||'frota.sinfel.com.br'):'';
+};
+$('#form-usuario').addEventListener('submit',async e=>{
+  e.preventDefault();if(!isAdmin())return;
+  const usuario=userToEmail($('#u-usuario').value).split('@')[0];
+  const nome=$('#u-nome').value.trim(),senha=$('#u-senha').value,papel=$('#u-papel').value;
+  if(!usuario){toast('Informe um usuário com letras e números.',true);return}
+  if(senha.length<6){toast('A senha precisa ter pelo menos 6 caracteres.',true);return}
+  await busy($('#u-save'),async()=>{
+    // cliente separado, sem guardar sessão, para não trocar o login do administrador
+    const tmp=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+    const {data,error}=await tmp.auth.signUp({email:userToEmail(usuario),password:senha,options:{data:{nome}}});
+    if(error){
+      console.error(error);
+      toast(/registered|already/i.test(error.message||'')?'Esse usuário já existe.':'Não foi possível criar o usuário: '+(error.message||''),true);return;
+    }
+    if(!data||!data.user){toast('Não foi possível criar o usuário.',true);return}
+    const r=await sb.from('perfis').update({nome,papel,ativo:true}).eq('id',data.user.id);
+    if(r.error){dbErr(r.error,'Usuário criado, mas não consegui ativá-lo. Ative na lista.');await loadAll();return}
+    $('#panel-usuario').hidden=true;toast('Usuário '+usuario+' criado.');await loadAll();
+  });
+});
+async function updPerfil(id,patch,msg){
+  if(!isAdmin()||id===S.perfil.id)return;
+  const r=await sb.from('perfis').update(patch).eq('id',id);
+  if(r.error){dbErr(r.error);return}
+  toast(msg);await loadAll();
+}
+
+/* ---------- exportação ---------- */
+function exportCsv(kind){
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const n=v=>String(v).replace('.',',');
+  let head,rows,name;
+  if(kind==='abast'){
+    head=['Data','Placa','Km','Litros','Valor total','Posto','Tanque cheio','Registrado por'];
+    rows=S.abast.slice().sort((a,b)=>String(a.data).localeCompare(String(b.data))).map(x=>{const m=motoById(x.moto_id);return [fmtD(x.data),m?m.placa:'',x.km,n(x.litros),n(x.valor),x.posto||'',x.cheio?'sim':'não',perfilNome(x.usuario_id)]});
+    name='abastecimentos';
+  }else{
+    head=['Data','Placa','Serviço','Km','Custo','Oficina','Observação','Registrado por'];
+    rows=S.manut.slice().sort((a,b)=>String(a.data).localeCompare(String(b.data))).map(x=>{const m=motoById(x.moto_id);return [fmtD(x.data),m?m.placa:'',tipoNome(x),x.km,n(x.custo||0),x.oficina||'',x.obs||'',perfilNome(x.usuario_id)]});
+    name='manutencoes';
+  }
+  if(!rows.length){toast('Não há registros para exportar.',true);return}
+  const csv='﻿'+[head].concat(rows).map(r=>r.map(q).join(';')).join('\r\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');a.href=url;a.download='frota-'+name+'-'+todayStr()+'.csv';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const a=b.dataset.act,id=b.dataset.id;
+  switch(a){
+    case 'tab':setTab(b.dataset.tab);break;
+    case 'open-abast':openAbast(b.dataset.moto);break;
+    case 'open-manut':openManut(b.dataset.moto,b.dataset.tipo);break;
+    case 'open-moto':openMoto(id);break;
+    case 'open-ret':openRet(id);break;
+    case 'open-usuario':$('#form-usuario').reset();show('#panel-usuario');$('#u-usuario').focus({preventScroll:true});break;
+    case 'open-senha':$('#form-senha').reset();show('#panel-senha');break;
+    case 'close-abast':$('#panel-abast').hidden=true;break;
+    case 'close-manut':$('#panel-manut').hidden=true;break;
+    case 'close-moto':$('#panel-moto').hidden=true;break;
+    case 'close-ret':$('#panel-ret').hidden=true;break;
+    case 'close-usuario':$('#panel-usuario').hidden=true;break;
+    case 'close-senha':$('#panel-senha').hidden=true;break;
+    case 'excluir-moto':excluirMoto();break;
+    case 'reativar':{
+      if(!isAdmin())break;
+      const r=await sb.from('motos').update({status:'ativa',retirada_em:null,retirada_motivo:null,retirada_obs:null}).eq('id',id);
+      if(r.error){dbErr(r.error);break}
+      toast('Moto reativada.');await loadAll();break}
+    case 'del-abast':case 'del-manut':{
+      const key=(a==='del-abast'?'a:':'m:')+id;
+      if(S.armed!==key){arm(key);break}
+      S.armed=null;
+      const r=await sb.from(a==='del-abast'?'abastecimentos':'manutencoes').delete().eq('id',id);
+      if(r.error){dbErr(r.error);renderAll();break}
+      toast('Registro excluído.');await loadAll();break}
+    case 'export-abast':exportCsv('abast');break;
+    case 'export-manut':exportCsv('manut');break;
+    case 'save-ajustes':saveAjustes();break;
+    case 'reset-ajustes':
+      TIPOS.filter(t=>t.k!=='outro').forEach(t=>{$('#iv-km-'+t.k).value=t.km||'';$('#iv-me-'+t.k).value=t.meses||''});
+      S.ajustesDirty=true;break;
+    case 'toggle-ativo':{const p=S.perfis.find(x=>x.id===id);if(p)updPerfil(id,{ativo:!p.ativo},p.ativo?'Usuário desativado.':'Usuário ativado.');break}
+    case 'toggle-papel':{const p=S.perfis.find(x=>x.id===id);if(p)updPerfil(id,{papel:p.papel==='admin'?'funcionario':'admin'},'Perfil alterado.');break}
+    case 'sair':await sb.auth.signOut();break;
+  }
+});
+$('#ajustes-body').addEventListener('input',()=>{S.ajustesDirty=true});
+$('#a-moto').addEventListener('change',()=>lastKmHint('#a-moto','#a-km-hint'));
+$('#t-moto').addEventListener('change',()=>lastKmHint('#t-moto','#t-km-hint'));
+$('#t-tipo').addEventListener('change',()=>{$('#t-outro-box').hidden=$('#t-tipo').value!=='outro'});
+$('#f-abast').addEventListener('change',renderAbast);
+$('#f-manut').addEventListener('change',renderManut);
+function ppl(){const l=num($('#a-litros').value),v=num($('#a-valor').value);$('#a-ppl').textContent=(l>0&&v>0)?'= R$ '+nf2.format(v/l)+' por litro':''}
+$('#a-litros').addEventListener('input',ppl);$('#a-valor').addEventListener('input',ppl);
+function kmWarn(selId,inputId,hintId){
+  const m=motoById($(selId).value),k=kmNum($(inputId).value),h=$(hintId);
+  if(!m||!isFinite(k)){lastKmHint(selId,hintId);return}
+  const st=motoStats(m);
+  if(st.curKm!==null&&k<st.curKm){h.textContent='Menor que o último km ('+nf0.format(st.curKm)+'). Tudo bem se for lançamento antigo.';h.className='hint warn'}
+  else if(st.curKm!==null&&k-st.curKm>5000){h.textContent='Salto de '+nf0.format(k-st.curKm)+' km desde o último registro. Confira o número.';h.className='hint warn'}
+  else lastKmHint(selId,hintId);
+}
+$('#a-km').addEventListener('input',()=>kmWarn('#a-moto','#a-km','#a-km-hint'));
+$('#t-km').addEventListener('input',()=>kmWarn('#t-moto','#t-km','#t-km-hint'));
+
+$('#form-senha').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const n=$('#s-nova').value,c=$('#s-conf').value;
+  if(n.length<6){toast('A senha precisa ter pelo menos 6 caracteres.',true);return}
+  if(n!==c){toast('As senhas não são iguais.',true);return}
+  const r=await sb.auth.updateUser({password:n});
+  if(r.error){toast('Não foi possível trocar a senha: '+(r.error.message||''),true);return}
+  $('#panel-senha').hidden=true;toast('Senha alterada.');
+});
+
+/* ---------- entrar / sair ---------- */
+function showLogin(msg){
+  S.perfil=null;
+  $('#app').hidden=true;$('#login-screen').hidden=false;
+  $('#login-msg').textContent=msg||S.loginMsg||'';S.loginMsg='';
+  document.body.classList.remove('is-admin');
+  $('#l-pass').value='';
+}
+async function enter(){
+  const {data:ud}=await sb.auth.getUser();
+  const user=ud&&ud.user;
+  if(!user){showLogin();return}
+  const {data:p}=await sb.from('perfis').select('*').eq('id',user.id).maybeSingle();
+  if(!p||!p.ativo){
+    S.loginMsg='Usuário desativado. Fale com o administrador.';
+    await sb.auth.signOut();showLogin('Usuário desativado. Fale com o administrador.');return;
+  }
+  S.perfil=p;S.loaded=false;
+  document.body.classList.toggle('is-admin',p.papel==='admin');
+  $('#who-nome').textContent=p.nome;$('#who-papel').textContent=p.papel==='admin'?'Administrador':'Funcionário';
+  $('#login-screen').hidden=true;$('#app').hidden=false;
+  setTab('painel');
+  renderAll();
+  await loadAll();
+}
+$('#form-login').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const email=userToEmail($('#l-user').value),pass=$('#l-pass').value;
+  const msg=$('#login-msg');msg.textContent='';
+  if(!email||!pass){msg.textContent='Informe usuário e senha.';return}
+  const btn=$('#l-btn');btn.disabled=true;btn.textContent='Entrando…';
+  try{
+    const {error}=await sb.auth.signInWithPassword({email,password:pass});
+    if(error){msg.textContent=/invalid|credentials/i.test(error.message||'')?'Usuário ou senha incorretos.':'Não foi possível entrar. Tente de novo.';return}
+    await enter();
+  }finally{btn.disabled=false;btn.textContent='Entrar'}
+});
+
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.perfil)loadAll()});
+
+/* ---------- início ---------- */
+(async function boot(){
+  if(!window.supabase||!CFG.SUPABASE_URL||!CFG.SUPABASE_ANON_KEY){
+    const s=$('#setup');s.hidden=false;
+    s.textContent=!window.supabase?'Não foi possível carregar a biblioteca do sistema. Confira a internet.':'Sistema ainda não configurado: preencha SUPABASE_URL e SUPABASE_ANON_KEY no arquivo config.js.';
+    return;
+  }
+  sb=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY);
+  sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT')showLogin()});
+  const {data}=await sb.auth.getSession();
+  if(data&&data.session)await enter();else showLogin();
+})();
+})();
+</script>
+</body>
+</html>
