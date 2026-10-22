@@ -164,6 +164,11 @@ input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0;border
 #toast.err{background:var(--bad);color:#fff}
 .banner{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:12px 14px;font-weight:500}
 body:not(.is-admin) .admin-only{display:none!important}
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  nav.tabs,.who,.head-row .btns,.filters,#toast,.panel,.hint{display:none!important}
+  .tablewrap{border-color:#999}
+}
 @media (max-width:520px){
   h1{font-size:28px}
   .facts{grid-template-columns:1fr 1fr}
@@ -227,7 +232,10 @@ body:not(.is-admin) .admin-only{display:none!important}
       <button role="tab" id="tab-painel" data-act="tab" data-tab="painel" aria-selected="true">Painel</button>
       <button role="tab" id="tab-abast" data-act="tab" data-tab="abast" aria-selected="false">Abastecimento</button>
       <button role="tab" id="tab-manut" data-act="tab" data-tab="manut" aria-selected="false">Manutenção</button>
+      <button role="tab" id="tab-docs" data-act="tab" data-tab="docs" aria-selected="false">Documentos</button>
       <button role="tab" id="tab-motos" data-act="tab" data-tab="motos" aria-selected="false">Motos</button>
+      <button role="tab" class="admin-only" id="tab-relatorio" data-act="tab" data-tab="relatorio" aria-selected="false">Relatório</button>
+      <button role="tab" class="admin-only" id="tab-avisos" data-act="tab" data-tab="avisos" aria-selected="false">Avisos</button>
       <button role="tab" class="admin-only" id="tab-ajustes" data-act="tab" data-tab="ajustes" aria-selected="false">Intervalos</button>
       <button role="tab" class="admin-only" id="tab-usuarios" data-act="tab" data-tab="usuarios" aria-selected="false">Usuários</button>
     </nav>
@@ -239,6 +247,7 @@ body:not(.is-admin) .admin-only{display:none!important}
         <div class="btns">
           <button class="btn primary" data-act="open-abast" type="button">Registrar abastecimento</button>
           <button class="btn" data-act="open-manut" type="button">Registrar manutenção</button>
+          <button class="btn admin-only" data-act="wa-resumo" type="button">Resumo no WhatsApp</button>
         </div>
       </div>
       <div class="stats" id="stats"></div>
@@ -278,10 +287,16 @@ body:not(.is-admin) .admin-only{display:none!important}
           <div class="sect-title label-up">Documentos</div>
           <div class="field"><label for="m-ipva">IPVA pago até o ano</label><select id="m-ipva"></select></div>
           <div class="field"><label for="m-lic">Licenciamento pago até o ano</label><select id="m-lic"></select></div>
+          <div class="field"><label for="m-ipva-venc">Próximo vencimento do IPVA</label><input type="date" id="m-ipva-venc"></div>
+          <div class="field"><label for="m-lic-venc">Próximo vencimento do licenc.</label><input type="date" id="m-lic-venc"></div>
+          <p class="hint field wide">Com a data preenchida, o sistema avisa 30 dias antes (e por WhatsApp, se ligado). Ao pagar, atualize o ano pago e a próxima data.</p>
           <div class="field wide"><label for="m-crlv">Anexar CRLV (PDF ou foto)</label>
             <input type="file" id="m-crlv" accept=".pdf,image/jpeg,image/png">
             <span class="hint">Até 10 MB. Todos os usuários do sistema conseguem abrir o arquivo.</span>
             <div id="m-crlv-atual" class="small"></div></div>
+          <div class="sect-title label-up">Avisos por WhatsApp</div>
+          <div class="field"><label for="m-resp">Responsável pela moto</label><input type="text" id="m-resp" placeholder="ex.: João"></div>
+          <div class="field"><label for="m-fone">WhatsApp que recebe os avisos</label><input type="text" id="m-fone" inputmode="tel" placeholder="(34) 99999-0001"><span class="hint">Com DDD. Cada moto pode ter um número diferente.</span></div>
           <div class="form-actions"><button class="btn primary" type="submit" id="m-save">Salvar moto</button><button class="btn" type="button" data-act="close-moto">Cancelar</button></div>
         </form>
       </div>
@@ -368,6 +383,75 @@ body:not(.is-admin) .admin-only{display:none!important}
       <div><h3 style="margin-bottom:10px">Histórico</h3><div id="manut-list"></div></div>
     </section>
 
+    <!-- DOCUMENTOS -->
+    <section class="view" id="view-docs" hidden>
+      <div class="head-row">
+        <h2>Documentos</h2>
+        <div class="btns"><button class="btn primary" data-act="open-doc" type="button">Anexar documento</button></div>
+      </div>
+      <p class="muted">Seguro, multas, notas de manutenção e outros papéis da moto. O CRLV, o IPVA e o licenciamento ficam na aba Motos.</p>
+      <div id="docs-aviso"></div>
+
+      <div class="panel" id="panel-doc" hidden>
+        <div class="panel-head"><h3>Novo documento</h3><button class="link" data-act="close-doc" type="button">Fechar</button></div>
+        <form class="grid" id="form-doc" autocomplete="off">
+          <div class="field"><label for="d-moto">Moto</label><select id="d-moto" required></select></div>
+          <div class="field"><label for="d-tipo">Tipo</label>
+            <select id="d-tipo"><option value="seguro">Seguro</option><option value="multa">Multa</option><option value="nota">Nota de manutenção</option><option value="outro">Outro</option></select></div>
+          <div class="field wide"><label for="d-titulo">Título</label><input type="text" id="d-titulo" required maxlength="120" placeholder="ex.: Apólice Porto Seguro, Multa 12/03, NF troca de pneus"></div>
+          <div class="field"><label for="d-data">Data do documento</label><input type="date" id="d-data" required><span class="hint">Início do seguro, data da multa ou da nota.</span></div>
+          <div class="field"><label for="d-venc">Vencimento (opcional)</label><input type="date" id="d-venc"><span class="hint">Fim do seguro ou prazo da multa.</span></div>
+          <div class="field"><label for="d-valor">Valor (R$, opcional)</label><input type="text" id="d-valor" inputmode="decimal" placeholder="0,00"></div>
+          <div class="field check" id="d-pago-box" hidden><input type="checkbox" id="d-pago"><label for="d-pago">Multa já paga</label></div>
+          <div class="field wide"><label for="d-obs">Observação (opcional)</label><input type="text" id="d-obs" maxlength="300"></div>
+          <div class="field wide"><label for="d-arquivo">Arquivo (PDF ou foto)</label><input type="file" id="d-arquivo" accept=".pdf,image/jpeg,image/png"><span class="hint">Até 10 MB. Todos os usuários conseguem abrir.</span></div>
+          <div class="form-actions"><button class="btn primary" type="submit" id="d-save">Salvar documento</button><button class="btn" type="button" data-act="close-doc">Cancelar</button></div>
+        </form>
+      </div>
+
+      <div class="filters">
+        <label class="label-up" for="f-docs">Moto</label><select id="f-docs"></select>
+        <label class="label-up" for="f-docs-tipo">Tipo</label>
+        <select id="f-docs-tipo"><option value="">Todos</option><option value="seguro">Seguro</option><option value="multa">Multa</option><option value="nota">Nota de manutenção</option><option value="outro">Outro</option></select>
+      </div>
+      <div id="docs-list"></div>
+    </section>
+
+    <!-- RELATÓRIO -->
+    <section class="view admin-only" id="view-relatorio" hidden>
+      <div class="head-row">
+        <h2>Custo mensal por moto</h2>
+        <div class="btns"><button class="btn" data-act="export-rel" type="button">Exportar CSV</button><button class="btn" data-act="imprimir" type="button">Imprimir</button></div>
+      </div>
+      <div class="filters"><label class="label-up" for="rel-mes">Mês</label><select id="rel-mes"></select></div>
+      <div id="rel-body"></div>
+      <div><h3 style="margin-bottom:10px">Últimos 6 meses</h3><div id="rel-hist"></div></div>
+      <p class="hint">Combustível vem dos abastecimentos, manutenção da aba Manutenção, e “Seguro e multas” dos documentos que tiverem valor. Notas de manutenção anexadas não entram, para não contar em dobro.</p>
+    </section>
+
+    <!-- AVISOS -->
+    <section class="view admin-only" id="view-avisos" hidden>
+      <div class="head-row"><h2>Avisos por WhatsApp</h2></div>
+      <div class="note"><p>Todo dia às 8h o sistema confere as motos. Quando um serviço vence, manda uma mensagem pelo WhatsApp oficial (Meta) para o número cadastrado na moto e repete no intervalo escolhido, até o serviço ser registrado.</p></div>
+      <div id="avisos-aviso"></div>
+      <form class="grid" id="form-avisos" autocomplete="off">
+        <div class="field check wide"><input type="checkbox" id="av-ativo"><label for="av-ativo"><b>Enviar avisos automáticos</b></label></div>
+        <div class="field"><label for="av-horas">Repetir o aviso a cada</label>
+          <select id="av-horas"><option value="24">24 horas</option><option value="48">48 horas</option><option value="72">72 horas</option><option value="96">96 horas</option><option value="168">7 dias</option></select></div>
+        <div class="field"><label for="av-template">Nome do modelo aprovado na Meta</label><input type="text" id="av-template" autocapitalize="none" spellcheck="false"></div>
+        <div class="field check"><input type="checkbox" id="av-man"><label for="av-man">Avisar manutenção vencida</label></div>
+        <div class="field check"><input type="checkbox" id="av-doc"><label for="av-doc">Avisar documentos (IPVA, licenc., seguro, multas)</label></div>
+        <div class="field wide"><label for="av-copia">Número que recebe cópia de todos os avisos (opcional)</label><input type="text" id="av-copia" inputmode="tel" placeholder="(34) 99999-0001"></div>
+        <div class="form-actions">
+          <button class="btn primary" type="submit" id="av-save">Salvar</button>
+          <button class="btn" type="button" data-act="av-teste" id="av-teste">Enviar mensagem de teste</button>
+          <button class="btn" type="button" data-act="av-rodar" id="av-rodar">Verificar e enviar agora</button>
+        </div>
+      </form>
+      <div id="avisos-sem"></div>
+      <div><h3 style="margin-bottom:10px">Últimos envios</h3><div id="avisos-log"></div></div>
+    </section>
+
     <!-- INTERVALOS -->
     <section class="view admin-only" id="view-ajustes" hidden>
       <div class="head-row"><h2>Intervalos de manutenção</h2></div>
@@ -450,7 +534,7 @@ const TIPOS=[
 ];
 const tipoMap=Object.fromEntries(TIPOS.map(t=>[t.k,t]));
 
-const S={motos:[],abast:[],manut:[],perfis:[],cfg:null,perfil:null,armed:null,ajustesDirty:false,loaded:false,loginMsg:''};
+const S={motos:[],abast:[],manut:[],docs:[],docsOk:true,av:null,avLog:[],avOk:true,avDirty:false,perfis:[],cfg:null,perfil:null,armed:null,ajustesDirty:false,loaded:false,loginMsg:''};
 const isAdmin=()=>!!S.perfil&&S.perfil.papel==='admin';
 
 /* ---------- utilidades ---------- */
@@ -466,12 +550,52 @@ const canDel=r=>isAdmin()||(S.perfil&&r.usuario_id===S.perfil.id&&(Date.now()-ne
 const BUCKET='documentos';
 const ANO=new Date().getFullYear();
 function docStatus(m,k){
-  const y=k==='ipva'?m.ipva_ano:m.lic_ano;
+  const y=k==='ipva'?m.ipva_ano:m.lic_ano,v=k==='ipva'?m.ipva_venc:m.lic_venc;
   const nome=k==='ipva'?'IPVA':'Licenciamento',curto=k==='ipva'?'IPVA':'Licenc.';
-  if(!y)return {level:'none',nome,txt:nome+' não informado',curto:curto+' s/ info'};
-  if(y>=ANO)return {level:'ok',nome,txt:nome+' pago (exercício '+y+')',curto:curto+' pago'};
-  return {level:'bad',nome,txt:nome+' '+ANO+' pendente (pago até '+y+')',curto:curto+' pendente'};
+  let r;
+  if(!y)r={level:'none',nome,txt:nome+' não informado',curto:curto+' s/ info'};
+  else if(y>=ANO)r={level:'ok',nome,txt:nome+' pago (exercício '+y+')',curto:curto+' pago'};
+  else r={level:'bad',nome,txt:nome+' '+ANO+' pendente (pago até '+y+')',curto:curto+' pendente'};
+  if(v){
+    const d=dayDiff(parseD(v),today());
+    if(r.level==='ok'&&d>=0&&d<=30)r={level:'warn',nome,txt:nome+' vence em '+fmtD(v)+(d===0?' (hoje)':' ('+d+(d===1?' dia':' dias')+')'),curto:curto+' vence '+fmtD(v).slice(0,5)};
+    else if(r.level==='none'&&d<0)r={level:'bad',nome,txt:nome+' venceu em '+fmtD(v),curto:curto+' vencido'};
+    else if(r.level==='none'&&d<=30)r={level:'warn',nome,txt:nome+' vence em '+fmtD(v)+' ('+d+(d===1?' dia':' dias')+')',curto:curto+' vence '+fmtD(v).slice(0,5)};
+    else if(r.level==='bad')r.txt+=' · vencimento '+fmtD(v);
+  }
+  return r;
 }
+const DOC_TIPOS={seguro:'Seguro',multa:'Multa',nota:'Nota de manutenção',outro:'Outro'};
+function docSit(d){
+  if(d.tipo==='multa'&&d.pago)return {level:'ok',txt:'Paga'};
+  if(d.vencimento&&(d.tipo==='seguro'||d.tipo==='multa')){
+    const n=dayDiff(parseD(d.vencimento),today());
+    if(n<0)return {level:'bad',txt:(d.tipo==='seguro'?'Vencido em ':'Venceu em ')+fmtD(d.vencimento)};
+    if(n<=(d.tipo==='seguro'?30:15))return {level:'warn',txt:'Vence em '+fmtD(d.vencimento)};
+    return {level:'ok',txt:(d.tipo==='seguro'?'Vigente até ':'Vence em ')+fmtD(d.vencimento)};
+  }
+  if(d.tipo==='multa')return {level:'warn',txt:'Em aberto'};
+  return null;
+}
+// pendências de documentos de uma moto (IPVA, licenciamento, seguro e multas)
+function docItems(m){
+  const out=[];
+  ['ipva','lic'].forEach(k=>{const s=docStatus(m,k);if(s.level!=='ok')out.push({m,nome:s.nome,txt:s.txt,level:s.level,go:'moto'})});
+  const ds=S.docs.filter(d=>d.moto_id===m.id);
+  const seg=ds.filter(d=>d.tipo==='seguro'&&d.vencimento).sort((a,b)=>b.vencimento.localeCompare(a.vencimento))[0];
+  if(seg){const sit=docSit(seg);if(sit&&sit.level!=='ok')out.push({m,nome:'Seguro',txt:'Seguro '+sit.txt.toLowerCase(),level:sit.level,go:'docs'})}
+  ds.filter(d=>d.tipo==='multa'&&!d.pago).forEach(d=>{
+    const sit=docSit(d);
+    if(sit&&sit.level!=='ok')out.push({m,nome:'Multa',txt:'Multa “'+d.titulo+'” · '+sit.txt.toLowerCase(),level:sit.level,go:'docs'});
+  });
+  return out;
+}
+// telefone: só dígitos, com 55 na frente
+function foneNorm(v){let d=String(v||'').replace(/\D/g,'');if(!d)return '';if(d.length===10||d.length===11)d='55'+d;return d}
+const foneOk=d=>/^55\d{10,11}$/.test(d);
+const foneFmt=d=>String(d||'').replace(/^55(\d{2})(\d{4,5})(\d{4})$/,'+55 ($1) $2-$3');
+const ASSUNTO={oleo:'Necessário fazer a troca de óleo',corrente:'Necessário lubrificar a corrente',filtro_ar:'Necessário trocar o filtro de ar',vela:'Necessário trocar a vela de ignição',
+  freio:'Necessário revisar ou trocar as pastilhas/lonas de freio',kit:'Necessário trocar o kit de transmissão',pneus:'Necessário trocar os pneus',bateria:'Necessário trocar a bateria',revisao:'Necessária a revisão geral'};
 const docPill=(m,k)=>{const s=docStatus(m,k);return '<span class="pill '+s.level+'" title="'+esc(s.txt)+'">'+esc(s.curto)+'</span>'};
 const crlvBtn=m=>m.crlv_path
   ?'<button class="btn small" type="button" data-act="abrir-crlv" data-id="'+esc(m.id)+'">Abrir CRLV</button>'
@@ -554,7 +678,7 @@ function dbErr(error,fallback){
   const c=error.code||'';
   if(c==='23505')toast('Já existe um registro igual (placa repetida).',true);
   else if(c==='42501'||/row-level security/i.test(error.message||''))toast('Você não tem permissão para fazer isso.',true);
-  else if(c==='PGRST204'||c==='42703'||/schema cache|column .* does not exist/i.test(error.message||''))toast('O banco ainda não tem os campos de documentos. Rode o script 03-documentos.sql no Supabase.',true);
+  else if(c==='PGRST204'||c==='42703'||/schema cache|column .* does not exist/i.test(error.message||''))toast('O banco ainda não tem os campos novos. Rode os scripts 03-documentos.sql e 04-recursos.sql no Supabase.',true);
   else if(c==='PGRST301'||/JWT/i.test(error.message||''))toast('Sua sessão expirou. Entre de novo.',true);
   else toast(fallback||'Não foi possível salvar agora. Tente de novo.',true);
 }
@@ -576,11 +700,15 @@ async function fetchAll(table,order){
 }
 async function loadAll(){
   try{
-    const [motos,abast,manut,perfis,cfg]=await Promise.all([
+    const [motos,abast,manut,perfis,cfg,docs]=await Promise.all([
       fetchAll('motos'),fetchAll('abastecimentos','data'),fetchAll('manutencoes','data'),fetchAll('perfis'),
-      sb.from('config_intervalos').select('*').eq('id',1).maybeSingle()
+      sb.from('config_intervalos').select('*').eq('id',1).maybeSingle(),
+      fetchAll('documentos','data').catch(e=>{console.error(e);return null})
     ]);
-    S.motos=motos;S.abast=abast;S.manut=manut;S.perfis=perfis;S.cfg=cfg.data||null;S.loaded=true;
+    S.motos=motos;S.abast=abast;S.manut=manut;S.perfis=perfis;S.cfg=cfg.data||null;
+    S.docsOk=docs!==null;S.docs=docs||[];
+    await loadAvisos();
+    S.loaded=true;
     $('#banner').hidden=true;
   }catch(e){
     console.error(e);
@@ -590,12 +718,23 @@ async function loadAll(){
   renderAll();
 }
 
+async function loadAvisos(){
+  if(!isAdmin())return;
+  try{
+    const c=await sb.from('avisos_config').select('*').eq('id',1).maybeSingle();
+    if(c.error)throw c.error;
+    const l=await sb.from('avisos_enviados').select('*').order('enviado_em',{ascending:false}).range(0,29);
+    if(l.error)throw l.error;
+    S.av=c.data;S.avLog=l.data||[];S.avOk=true;
+  }catch(e){console.error(e);S.avOk=false}
+}
+
 /* ---------- renderização ---------- */
 const loadingBox='<div class="empty">Carregando…</div>';
 function renderAll(){
   if(!S.perfil)return;
-  fillSelects();renderDash();renderMotos();renderAbast();renderManut();
-  if(isAdmin()){if(!S.ajustesDirty)renderAjustes();renderUsuarios()}
+  fillSelects();renderDash();renderMotos();renderAbast();renderManut();renderDocs();
+  if(isAdmin()){if(!S.ajustesDirty)renderAjustes();renderUsuarios();renderRel();renderAvisos()}
 }
 function renderDash(){
   const as=ativas();
@@ -624,11 +763,14 @@ function renderDash(){
     '<button class="btn small" type="button" data-act="open-manut" data-moto="'+esc(i.m.id)+'" data-tipo="'+i.s.tipo+'">Registrar</button></li>').join('')+'</ul>';
 
   const dp=[];
-  as.forEach(m=>['ipva','lic'].forEach(k=>{const s=docStatus(m,k);if(s.level!=='ok')dp.push({m,s})}));
+  as.forEach(m=>docItems(m).forEach(i=>dp.push(i)));
+  dp.sort((x,y)=>(x.level===y.level?0:x.level==='bad'?-1:y.level==='bad'?1:x.level==='warn'?-1:1));
+  const dpLabel={bad:'Pendente',warn:'Atenção',none:'Não informado'};
   $('#doc-alerts').innerHTML=(S.loaded&&dp.length)?'<div class="card"><h3>Documentos pendentes</h3><ul class="alerts">'+dp.map(i=>
-    '<li>'+plate(i.m.placa,true)+'<div class="what"><b>'+esc(i.s.nome)+'</b><span class="small muted">'+esc(i.s.txt)+'</span></div>'+
-    '<span class="pill '+i.s.level+'">'+(i.s.level==='bad'?'Pendente':'Não informado')+'</span>'+
-    '<button class="btn small admin-only" type="button" data-act="open-moto" data-id="'+esc(i.m.id)+'">Atualizar</button></li>').join('')+'</ul></div>':'';
+    '<li>'+plate(i.m.placa,true)+'<div class="what"><b>'+esc(i.nome)+'</b><span class="small muted">'+esc(i.txt)+'</span></div>'+
+    '<span class="pill '+i.level+'">'+dpLabel[i.level]+'</span>'+
+    (i.go==='docs'?'<button class="btn small" type="button" data-act="tab" data-tab="docs">Ver</button>'
+      :'<button class="btn small admin-only" type="button" data-act="open-moto" data-id="'+esc(i.m.id)+'">Atualizar</button>')+'</li>').join('')+'</ul></div>':'';
 
   if(!as.length){$('#fleet-table').innerHTML='';return}
   $('#fleet-table').innerHTML='<div class="tablewrap"><table><thead><tr><th>Moto</th><th class="r">Km atual</th><th class="r">Consumo médio</th><th>Último abastecimento</th><th>Óleo</th><th>Documentos</th></tr></thead><tbody>'+
@@ -650,10 +792,11 @@ function motoCard(m){
     '<div class="docline">'+docPill(m,'ipva')+docPill(m,'lic')+crlvBtn(m)+'</div>'+
     '<details><summary>Dados do documento</summary><dl class="docs">'+
       '<dt>Renavam</dt><dd>'+esc(m.renavam||'—')+'</dd><dt>Chassi</dt><dd>'+esc(m.chassi||'—')+'</dd><dt>Motor</dt><dd>'+esc(m.motor||'—')+'</dd>'+
-      '<dt>Combustível</dt><dd>'+esc(m.combustivel||'—')+'</dd><dt>Categoria</dt><dd>'+esc(m.categoria||'—')+'</dd><dt>Proprietário</dt><dd>'+esc(m.proprietario||'—')+'</dd><dt>CNPJ / CPF</dt><dd>'+esc(m.doc||'—')+'</dd></dl></details>'+
+      '<dt>Combustível</dt><dd>'+esc(m.combustivel||'—')+'</dd><dt>Categoria</dt><dd>'+esc(m.categoria||'—')+'</dd><dt>Proprietário</dt><dd>'+esc(m.proprietario||'—')+'</dd><dt>CNPJ / CPF</dt><dd>'+esc(m.doc||'—')+'</dd>'+
+      '<dt>Responsável</dt><dd>'+esc(m.responsavel||'—')+'</dd><dt>WhatsApp</dt><dd>'+esc(m.whatsapp?foneFmt(m.whatsapp):'—')+'</dd></dl></details>'+
     '<div class="row-actions">'+
       (off?'<span class="admin-only"><button class="btn small" type="button" data-act="reativar" data-id="'+esc(m.id)+'">Reativar</button> <button class="btn small danger" type="button" data-act="open-ret" data-id="'+esc(m.id)+'">Excluir…</button></span>'
-          :'<button class="btn small" type="button" data-act="open-abast" data-moto="'+esc(m.id)+'">Abastecer</button><button class="btn small" type="button" data-act="open-manut" data-moto="'+esc(m.id)+'">Manutenção</button><button class="btn small admin-only" type="button" data-act="open-moto" data-id="'+esc(m.id)+'">Editar</button><button class="btn small admin-only" type="button" data-act="open-ret" data-id="'+esc(m.id)+'">Retirar</button>')+
+          :'<button class="btn small" type="button" data-act="open-abast" data-moto="'+esc(m.id)+'">Abastecer</button><button class="btn small" type="button" data-act="open-manut" data-moto="'+esc(m.id)+'">Manutenção</button><button class="btn small admin-only" type="button" data-act="wa-moto" data-id="'+esc(m.id)+'">WhatsApp</button><button class="btn small admin-only" type="button" data-act="open-moto" data-id="'+esc(m.id)+'">Editar</button><button class="btn small admin-only" type="button" data-act="open-ret" data-id="'+esc(m.id)+'">Retirar</button>')+
     '</div></article>';
 }
 function renderMotos(){
@@ -723,7 +866,7 @@ function renderUsuarios(){
 function fillSelects(){
   const as=ativas(), all=S.motos.slice().sort((a,b)=>a.placa.localeCompare(b.placa));
   const opt=m=>'<option value="'+esc(m.id)+'">'+esc(m.placa)+' · '+esc(m.apelido||label(m))+'</option>';
-  [['#a-moto',as,false],['#t-moto',as,false],['#f-abast',all,true],['#f-manut',all,true]].forEach(a=>{
+  [['#a-moto',as,false],['#t-moto',as,false],['#d-moto',as,false],['#f-abast',all,true],['#f-manut',all,true],['#f-docs',all,true]].forEach(a=>{
     const el=$(a[0]);const v=el.value;
     el.innerHTML=(a[2]?'<option value="">Todas as motos</option>':'')+(a[1].length?a[1].map(opt).join(''):(a[2]?'':'<option value="">Nenhuma moto cadastrada</option>'));
     if(v&&[].some.call(el.options,o=>o.value===v))el.value=v;
@@ -731,10 +874,144 @@ function fillSelects(){
   const ts=$('#t-tipo');if(!ts.options.length)ts.innerHTML=TIPOS.map(t=>'<option value="'+t.k+'">'+esc(t.nome)+'</option>').join('');
 }
 
+
+/* ---------- documentos, relatório e avisos ---------- */
+function renderDocs(){
+  const box=$('#docs-aviso');
+  if(!S.loaded){$('#docs-list').innerHTML=loadingBox;return}
+  if(!S.docsOk){box.innerHTML='<div class="banner">Esta aba ainda não está ligada no banco. Rode o script 04-recursos.sql no Supabase.</div>';$('#docs-list').innerHTML='';return}
+  box.innerHTML='';
+  const fm=$('#f-docs').value||'',ft=$('#f-docs-tipo').value||'';
+  const rows=S.docs.filter(d=>(!fm||d.moto_id===fm)&&(!ft||d.tipo===ft)).sort((a,b)=>String(b.data).localeCompare(String(a.data)));
+  if(!rows.length){$('#docs-list').innerHTML='<div class="empty"><b>Nenhum documento anexado</b>Use “Anexar documento” para guardar seguro, multas e notas.</div>';return}
+  $('#docs-list').innerHTML='<div class="tablewrap"><table><thead><tr><th>Data</th><th>Moto</th><th>Tipo</th><th>Título</th><th class="r">Valor</th><th>Situação</th><th>Arquivo</th><th>Por</th><th class="admin-only"></th></tr></thead><tbody>'+
+    rows.map(d=>{const m=motoById(d.moto_id),sit=docSit(d);
+      const k='d:'+d.id,armed=S.armed===k;
+      return '<tr><td>'+fmtD(d.data)+'</td><td>'+(m?plate(m.placa,true):'<span class="muted">removida</span>')+'</td><td>'+esc(DOC_TIPOS[d.tipo]||d.tipo)+'</td>'+
+      '<td>'+esc(d.titulo)+(d.obs?'<br><span class="small muted">'+esc(d.obs)+'</span>':'')+'</td>'+
+      '<td class="r">'+(d.valor!=null?brl.format(d.valor):'<span class="muted">—</span>')+'</td>'+
+      '<td>'+(sit?'<span class="pill '+sit.level+'">'+esc(sit.txt)+'</span>':'<span class="muted">—</span>')+'</td>'+
+      '<td>'+(d.arquivo_path?'<button class="btn small" type="button" data-act="abrir-doc" data-id="'+esc(d.id)+'">Abrir</button>':'<span class="muted small">sem arquivo</span>')+'</td>'+
+      '<td class="small">'+esc(perfilNome(d.usuario_id))+'</td>'+
+      '<td class="r admin-only">'+(d.tipo==='multa'?'<button class="link" type="button" data-act="toggle-pago" data-id="'+esc(d.id)+'">'+(d.pago?'Reabrir':'Marcar paga')+'</button> ':'')+
+        '<button class="link danger'+(armed?' armed':'')+'" type="button" data-act="del-doc" data-id="'+esc(d.id)+'">'+(armed?'Confirmar':'Excluir')+'</button></td></tr>'}).join('')+'</tbody></table></div>';
+}
+function openDoc(motoId){
+  setTab('docs');
+  $('#form-doc').reset();$('#d-data').value=todayStr();$('#d-pago-box').hidden=true;
+  fillSelects();if(motoId&&motoById(motoId))$('#d-moto').value=motoId;
+  show('#panel-doc');$('#d-titulo').focus({preventScroll:true});
+}
+
+const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const mesLabel=k=>MESES[Number(k.slice(5))-1]+'/'+k.slice(0,4);
+function mesesLista(n){
+  const out=[];const d=today();let y=d.getFullYear(),mo=d.getMonth();
+  for(let i=0;i<n;i++){out.push(y+'-'+pad(mo+1));mo--;if(mo<0){mo=11;y--}}
+  return out;
+}
+const somar=(arr,f)=>arr.reduce((t,x)=>t+(Number(f(x))||0),0);
+function relMoto(m,mes){
+  const ab=S.abast.filter(x=>x.moto_id===m.id&&String(x.data).startsWith(mes));
+  const mn=S.manut.filter(x=>x.moto_id===m.id&&String(x.data).startsWith(mes));
+  const dc=S.docs.filter(x=>x.moto_id===m.id&&x.tipo!=='nota'&&String(x.data).startsWith(mes));
+  const r={m,litros:somar(ab,x=>x.litros),comb:somar(ab,x=>x.valor),man:somar(mn,x=>x.custo),doc:somar(dc,x=>x.valor)};
+  r.total=r.comb+r.man+r.doc;return r;
+}
+function relLinhas(mes){return S.motos.map(m=>relMoto(m,mes)).filter(r=>r.total>0||r.litros>0).sort((a,b)=>b.total-a.total)}
+function renderRel(){
+  const sel=$('#rel-mes');
+  if(!sel.options.length){sel.innerHTML=mesesLista(12).map(k=>'<option value="'+k+'">'+esc(mesLabel(k))+'</option>').join('')}
+  if(!S.loaded){$('#rel-body').innerHTML=loadingBox;$('#rel-hist').innerHTML='';return}
+  const mes=sel.value,rows=relLinhas(mes);
+  if(!rows.length)$('#rel-body').innerHTML='<div class="empty"><b>Sem gastos em '+esc(mesLabel(mes))+'</b>Nenhum abastecimento, manutenção, seguro ou multa lançado neste mês.</div>';
+  else{
+    const T={litros:somar(rows,r=>r.litros),comb:somar(rows,r=>r.comb),man:somar(rows,r=>r.man),doc:somar(rows,r=>r.doc),total:somar(rows,r=>r.total)};
+    $('#rel-body').innerHTML='<div class="tablewrap"><table><thead><tr><th>Moto</th><th class="r">Litros</th><th class="r">Combustível</th><th class="r">Manutenção</th><th class="r">Seguro e multas</th><th class="r">Total</th></tr></thead><tbody>'+
+      rows.map(r=>'<tr><td><div style="display:flex;gap:10px;align-items:center">'+plate(r.m.placa,true)+'<span>'+esc(r.m.apelido||label(r.m))+'</span></div></td><td class="r">'+nf1.format(r.litros)+'</td><td class="r">'+brl.format(r.comb)+'</td><td class="r">'+brl.format(r.man)+'</td><td class="r">'+brl.format(r.doc)+'</td><td class="r"><b>'+brl.format(r.total)+'</b></td></tr>').join('')+
+      '</tbody><tfoot><tr><th>Total da frota</th><th class="r">'+nf1.format(T.litros)+'</th><th class="r">'+brl.format(T.comb)+'</th><th class="r">'+brl.format(T.man)+'</th><th class="r">'+brl.format(T.doc)+'</th><th class="r">'+brl.format(T.total)+'</th></tr></tfoot></table></div>';
+  }
+  $('#rel-hist').innerHTML='<div class="tablewrap"><table><thead><tr><th>Mês</th><th class="r">Combustível</th><th class="r">Manutenção</th><th class="r">Seguro e multas</th><th class="r">Total</th></tr></thead><tbody>'+
+    mesesLista(6).map(k=>{const rs=S.motos.map(m=>relMoto(m,k));const c=somar(rs,r=>r.comb),mn=somar(rs,r=>r.man),dc=somar(rs,r=>r.doc);
+      return '<tr><td>'+esc(mesLabel(k))+'</td><td class="r">'+brl.format(c)+'</td><td class="r">'+brl.format(mn)+'</td><td class="r">'+brl.format(dc)+'</td><td class="r"><b>'+brl.format(c+mn+dc)+'</b></td></tr>'}).join('')+'</tbody></table></div>';
+}
+
+function renderAvisos(){
+  const box=$('#avisos-aviso'),form=$('#form-avisos');
+  if(!S.loaded)return;
+  if(!S.avOk){
+    box.innerHTML='<div class="banner">Esta aba ainda não está ligada no banco. Rode o script 04-recursos.sql no Supabase.</div>';
+    form.hidden=true;$('#avisos-sem').innerHTML='';$('#avisos-log').innerHTML='';return;
+  }
+  box.innerHTML='';form.hidden=false;
+  const c=S.av||{ativo:false,intervalo_horas:48,avisar_manutencao:true,avisar_documentos:false,copia_numero:'',template:'aviso_frota'};
+  if(!S.avDirty){
+    $('#av-ativo').checked=!!c.ativo;
+    const sel=$('#av-horas');if(![].some.call(sel.options,o=>Number(o.value)===c.intervalo_horas))sel.insertAdjacentHTML('beforeend','<option value="'+c.intervalo_horas+'">'+c.intervalo_horas+' horas</option>');
+    sel.value=String(c.intervalo_horas);
+    $('#av-man').checked=!!c.avisar_manutencao;$('#av-doc').checked=!!c.avisar_documentos;
+    $('#av-copia').value=c.copia_numero?foneFmt(c.copia_numero):'';$('#av-template').value=c.template||'aviso_frota';
+  }
+  const sem=ativas().filter(m=>!m.whatsapp);
+  $('#avisos-sem').innerHTML=sem.length?'<div class="note"><p><b>Sem WhatsApp cadastrado:</b> '+sem.map(m=>esc(m.placa)).join(', ')+'. Cadastre o número em Motos → Editar para essas motos receberem aviso.</p></div>':'';
+  $('#avisos-log').innerHTML=S.avLog.length?'<div class="tablewrap"><table><thead><tr><th>Quando</th><th>Moto</th><th>Assunto</th><th>Para</th><th>Situação</th></tr></thead><tbody>'+
+    S.avLog.map(x=>{const m=motoById(x.moto_id);
+      return '<tr><td>'+esc(new Date(x.enviado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))+'</td><td>'+(m?plate(m.placa,true):'<span class="muted">—</span>')+'</td><td>'+esc(x.assunto||'')+'</td><td class="small">'+esc(foneFmt(x.destino))+'</td>'+
+      '<td>'+(x.status==='enviado'?'<span class="pill ok">Enviado</span>':'<span class="pill bad" title="'+esc(x.erro||'')+'">Erro</span><div class="small muted">'+esc((x.erro||'').slice(0,90))+'</div>')+'</td></tr>'}).join('')+'</tbody></table></div>':
+    '<div class="empty"><b>Nenhum aviso enviado ainda</b>Os envios aparecem aqui.</div>';
+}
+async function salvarAvisos(){
+  if(!isAdmin())return;
+  const copia=foneNorm($('#av-copia').value);
+  if(copia&&!foneOk(copia)){toast('Número de cópia inválido. Use DDD + número.',true);return}
+  const tpl=$('#av-template').value.trim();
+  if(!/^[a-z0-9_]{1,200}$/.test(tpl)){toast('O nome do modelo usa só letras minúsculas, números e _ (ex.: aviso_frota).',true);return}
+  await busy($('#av-save'),async()=>{
+    const r=await sb.from('avisos_config').upsert({id:1,ativo:$('#av-ativo').checked,intervalo_horas:Number($('#av-horas').value),avisar_manutencao:$('#av-man').checked,avisar_documentos:$('#av-doc').checked,copia_numero:copia||null,template:tpl,atualizado_em:new Date().toISOString()});
+    if(r.error){dbErr(r.error);return}
+    S.avDirty=false;toast('Avisos salvos.');await loadAll();
+  });
+}
+async function chamarAvisos(body,btn){
+  await busy(btn,async()=>{
+    toast('Enviando… pode levar alguns segundos.');
+    let r;
+    try{r=await sb.functions.invoke('avisos',{body})}catch(e){r={error:e}}
+    if(r.error){
+      let msg='';try{const j=await r.error.context.json();msg=j&&j.mensagem}catch(e){}
+      console.error(r.error);
+      toast(msg||'A função de avisos não respondeu. Confira se ela foi publicada no Supabase.',true);return;
+    }
+    const d=r.data||{};toast(d.mensagem||'Pronto.',d.ok===false);
+    await loadAvisos();renderAvisos();
+  });
+}
+
+/* ---------- texto para WhatsApp (envio manual) ---------- */
+function waLinhas(m){
+  const st=motoStats(m),L=[];
+  TIPOS.forEach(t=>{const sv=svcStatus(t.k,st);if(!sv||(sv.level!=='bad'&&sv.level!=='warn'))return;
+    L.push('• '+(sv.level==='bad'?(ASSUNTO[t.k]||'Necessário fazer: '+t.nome):'Em breve: '+t.nome)+' ('+svcText(sv)+')')});
+  docItems(m).forEach(i=>{if(i.level!=='none')L.push('• '+i.txt)});
+  return L;
+}
+function waAbrir(num,txt){window.open('https://wa.me/'+(num||'')+'?text='+encodeURIComponent(txt),'_blank','noopener')}
+function waMoto(id){
+  const m=motoById(id);if(!m)return;
+  const L=waLinhas(m);
+  if(!L.length){toast(m.placa+' não tem pendências.');return}
+  waAbrir(m.whatsapp,'*Frota Sinfel · '+m.placa+'* ('+label(m)+')\n'+L.join('\n')+'\nQuando o serviço for feito, registre no sistema da frota.');
+}
+function waResumo(){
+  const blocos=ativas().map(m=>({m,L:waLinhas(m)})).filter(x=>x.L.length);
+  if(!blocos.length){toast('Nada pendente na frota.');return}
+  waAbrir('','*Frota Sinfel · resumo de '+fmtD(todayStr())+'*\n\n'+blocos.map(x=>'*'+x.m.placa+'* ('+label(x.m)+')\n'+x.L.join('\n')).join('\n\n'));
+}
+
 /* ---------- abas e painéis ---------- */
-const TABS=['painel','abast','manut','motos','ajustes','usuarios'];
+const TABS=['painel','abast','manut','docs','motos','relatorio','avisos','ajustes','usuarios'];
 function setTab(t){
-  if((t==='ajustes'||t==='usuarios')&&!isAdmin())t='painel';
+  if((t==='ajustes'||t==='usuarios'||t==='relatorio'||t==='avisos')&&!isAdmin())t='painel';
   TABS.forEach(k=>{$('#view-'+k).hidden=k!==t;$('#tab-'+k).setAttribute('aria-selected',k===t?'true':'false')});
 }
 function show(panel){const p=$(panel);p.hidden=false;p.scrollIntoView({block:'start',behavior:'smooth'})}
@@ -764,6 +1041,8 @@ function openMoto(id){
   const m=id&&motoById(id);
   $('#moto-form-title').textContent=m?'Editar '+m.placa:'Cadastrar moto';
   anoOpts('#m-ipva',m&&m.ipva_ano);anoOpts('#m-lic',m&&m.lic_ano);
+  $('#m-ipva-venc').value=(m&&m.ipva_venc)||'';$('#m-lic-venc').value=(m&&m.lic_venc)||'';
+  $('#m-resp').value=(m&&m.responsavel)||'';$('#m-fone').value=(m&&m.whatsapp)?foneFmt(m.whatsapp):'';
   $('#m-crlv').value='';
   $('#m-crlv-atual').innerHTML=(m&&m.crlv_path)
     ?'Arquivo atual: <b>'+esc(m.crlv_nome||'CRLV')+'</b> · <button class="link" type="button" data-act="abrir-crlv" data-id="'+esc(m.id)+'">Abrir</button> · <label><input type="checkbox" id="m-crlv-rem"> remover</label><br><span class="muted">Escolher outro arquivo acima substitui este.</span>'
@@ -800,12 +1079,16 @@ function stErr(error){
 }
 async function abrirCrlv(id){
   const m=motoById(id);if(!m||!m.crlv_path)return;
+  return abrirArquivo(m.crlv_path);
+}
+async function abrirArquivo(path){
+  if(!path)return;
   const w=window.open('','_blank');
-  const {data,error}=await sb.storage.from(BUCKET).createSignedUrl(m.crlv_path,300);
+  const {data,error}=await sb.storage.from(BUCKET).createSignedUrl(path,300);
   if(error||!data||!data.signedUrl){
     if(w)w.close();
     console.error(error);
-    toast(/not found/i.test((error&&error.message)||'')?'O arquivo não foi encontrado. Anexe o CRLV de novo.':'Não foi possível abrir o arquivo. Tente de novo.',true);
+    toast(/not found/i.test((error&&error.message)||'')?'O arquivo não foi encontrado. Anexe de novo.':'Não foi possível abrir o arquivo. Tente de novo.',true);
     return;
   }
   if(w){try{w.opener=null}catch(e){}w.location.href=data.signedUrl}else{location.href=data.signedUrl}
@@ -822,10 +1105,13 @@ $('#form-moto').addEventListener('submit',async e=>{
   const id=$('#m-id').value;
   if(S.motos.some(m=>m.placa===placa&&m.id!==id)){toast('Já existe uma moto com a placa '+placa+'.',true);return}
   const km=kmNum($('#m-km').value);
+  const fone=foneNorm($('#m-fone').value);
+  if(fone&&!foneOk(fone)){toast('WhatsApp inválido. Use DDD + número, ex.: (34) 99999-0001.',true);return}
   const data={placa,apelido:$('#m-apelido').value.trim(),marca:$('#m-marca').value.trim(),modelo:$('#m-modelo').value.trim(),
     ano_fab:$('#m-anofab').value.trim(),ano_modelo:$('#m-anomod').value.trim(),cor:$('#m-cor').value.trim(),combustivel:$('#m-comb').value.trim(),
     km_inicial:isFinite(km)?km:null,renavam:$('#m-renavam').value.trim(),chassi:$('#m-chassi').value.trim().toUpperCase(),motor:$('#m-motor').value.trim().toUpperCase(),
-    categoria:$('#m-cat').value.trim(),proprietario:$('#m-prop').value.trim(),doc:$('#m-doc').value.trim(),ipva_ano:Number($('#m-ipva').value)||null,lic_ano:Number($('#m-lic').value)||null};
+    categoria:$('#m-cat').value.trim(),proprietario:$('#m-prop').value.trim(),doc:$('#m-doc').value.trim(),ipva_ano:Number($('#m-ipva').value)||null,lic_ano:Number($('#m-lic').value)||null,
+    ipva_venc:$('#m-ipva-venc').value||null,lic_venc:$('#m-lic-venc').value||null,responsavel:$('#m-resp').value.trim()||null,whatsapp:fone||null};
   await busy($('#m-save'),async()=>{
     const novoId=id||(window.crypto&&crypto.randomUUID?crypto.randomUUID():null);
     const file=$('#m-crlv').files&&$('#m-crlv').files[0];
@@ -865,14 +1151,15 @@ async function excluirMoto(){
   const id=$('#r-id').value,m=motoById(id);if(!m)return;
   const b=$('#r-excluir');
   if(!b.classList.contains('armed')){
-    const n=S.abast.filter(x=>x.moto_id===id).length+S.manut.filter(x=>x.moto_id===id).length;
-    b.classList.add('armed');$('#r-excluir-hint').textContent='Isso apaga '+m.placa+' e '+n+' registro'+(n===1?'':'s')+' de abastecimento e manutenção. Clique de novo para confirmar.';
+    const n=S.abast.filter(x=>x.moto_id===id).length+S.manut.filter(x=>x.moto_id===id).length+S.docs.filter(x=>x.moto_id===id).length;
+    b.classList.add('armed');$('#r-excluir-hint').textContent='Isso apaga '+m.placa+' e '+n+' registro'+(n===1?'':'s')+' de abastecimento, manutenção e documentos. Clique de novo para confirmar.';
     return;
   }
   await busy(b,async()=>{
     const r=await sb.from('motos').delete().eq('id',id);
     if(r.error){dbErr(r.error);return}
-    if(m.crlv_path){try{await sb.storage.from(BUCKET).remove([m.crlv_path])}catch(e){}}
+    const files=[m.crlv_path].concat(S.docs.filter(x=>x.moto_id===id).map(x=>x.arquivo_path)).filter(Boolean);
+    if(files.length){try{await sb.storage.from(BUCKET).remove(files)}catch(e){}}
     $('#panel-ret').hidden=true;toast(m.placa+' excluída.');await loadAll();
   });
 }
@@ -903,6 +1190,35 @@ $('#form-manut').addEventListener('submit',async e=>{
     $('#panel-manut').hidden=true;toast('Manutenção salva.');await loadAll();
   });
 });
+
+$('#form-doc').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const moto_id=$('#d-moto').value;if(!moto_id){toast('Escolha a moto.',true);return}
+  const tipo=$('#d-tipo').value,titulo=$('#d-titulo').value.trim();
+  if(!titulo){toast('Informe um título.',true);return}
+  const vRaw=$('#d-valor').value.trim(),valor=vRaw?num(vRaw):null;
+  if(vRaw&&(!isFinite(valor)||valor<0)){toast('Valor inválido.',true);return}
+  const data=$('#d-data').value,venc=$('#d-venc').value||null;
+  if(venc&&venc<data){toast('O vencimento não pode ser antes da data do documento.',true);return}
+  const file=$('#d-arquivo').files&&$('#d-arquivo').files[0];
+  await busy($('#d-save'),async()=>{
+    let path=null;
+    if(file){
+      const ext=extDoc(file);
+      if(!ext){toast('Arquivo não aceito. Use PDF, JPG ou PNG.',true);return}
+      if(file.size>10*1024*1024){toast('Arquivo grande demais. O máximo é 10 MB.',true);return}
+      path='docs/'+moto_id+'/'+Date.now()+'.'+ext;
+      const up=await sb.storage.from(BUCKET).upload(path,file,{contentType:ext==='pdf'?'application/pdf':(ext==='png'?'image/png':'image/jpeg'),upsert:false});
+      if(up.error){stErr(up.error);return}
+    }
+    const r=await sb.from('documentos').insert({moto_id,tipo,titulo,data,vencimento:venc,valor,pago:tipo==='multa'&&$('#d-pago').checked,obs:$('#d-obs').value.trim(),
+      arquivo_path:path,arquivo_nome:file?file.name.slice(0,120):null,usuario_id:S.perfil.id});
+    if(r.error){if(path){try{await sb.storage.from(BUCKET).remove([path])}catch(e){}}dbErr(r.error);return}
+    $('#panel-doc').hidden=true;toast('Documento salvo.');await loadAll();
+  });
+});
+$('#form-avisos').addEventListener('submit',e=>{e.preventDefault();salvarAvisos()});
+$('#form-avisos').addEventListener('input',()=>{S.avDirty=true});
 
 async function saveAjustes(){
   if(!isAdmin())return;
@@ -963,6 +1279,11 @@ function exportCsv(kind){
     head=['Data','Placa','Km','Litros','Valor total','Posto','Tanque cheio','Registrado por'];
     rows=S.abast.slice().sort((a,b)=>String(a.data).localeCompare(String(b.data))).map(x=>{const m=motoById(x.moto_id);return [fmtD(x.data),m?m.placa:'',x.km,n(x.litros),n(x.valor),x.posto||'',x.cheio?'sim':'não',perfilNome(x.usuario_id)]});
     name='abastecimentos';
+  }else if(kind==='rel'){
+    const mes=$('#rel-mes').value;
+    head=['Mês','Placa','Litros','Combustível','Manutenção','Seguro e multas','Total'];
+    rows=relLinhas(mes).map(r=>[mesLabel(mes),r.m.placa,n(r.litros.toFixed(2)),n(r.comb.toFixed(2)),n(r.man.toFixed(2)),n(r.doc.toFixed(2)),n(r.total.toFixed(2))]);
+    name='custo-'+mes;
   }else{
     head=['Data','Placa','Serviço','Km','Custo','Oficina','Observação','Registrado por'];
     rows=S.manut.slice().sort((a,b)=>String(a.data).localeCompare(String(b.data))).map(x=>{const m=motoById(x.moto_id);return [fmtD(x.data),m?m.placa:'',tipoNome(x),x.km,n(x.custo||0),x.oficina||'',x.obs||'',perfilNome(x.usuario_id)]});
@@ -995,6 +1316,34 @@ document.addEventListener('click',async e=>{
     case 'close-senha':$('#panel-senha').hidden=true;break;
     case 'excluir-moto':excluirMoto();break;
     case 'abrir-crlv':abrirCrlv(id);break;
+    case 'open-doc':openDoc();break;
+    case 'close-doc':$('#panel-doc').hidden=true;break;
+    case 'abrir-doc':{const d=S.docs.find(x=>x.id===id);if(d)abrirArquivo(d.arquivo_path);break}
+    case 'toggle-pago':{
+      if(!isAdmin())break;
+      const d=S.docs.find(x=>x.id===id);if(!d)break;
+      const r=await sb.from('documentos').update({pago:!d.pago}).eq('id',id);
+      if(r.error){dbErr(r.error);break}
+      toast(d.pago?'Multa reaberta.':'Multa marcada como paga.');await loadAll();break}
+    case 'del-doc':{
+      if(!isAdmin())break;
+      const key='d:'+id;
+      if(S.armed!==key){arm(key);break}
+      S.armed=null;
+      const d=S.docs.find(x=>x.id===id);
+      const r=await sb.from('documentos').delete().eq('id',id);
+      if(r.error){dbErr(r.error);renderAll();break}
+      if(d&&d.arquivo_path){try{await sb.storage.from(BUCKET).remove([d.arquivo_path])}catch(e){}}
+      toast('Documento excluído.');await loadAll();break}
+    case 'wa-moto':waMoto(id);break;
+    case 'wa-resumo':waResumo();break;
+    case 'export-rel':exportCsv('rel');break;
+    case 'imprimir':window.print();break;
+    case 'av-teste':{
+      const num=foneNorm($('#av-copia').value);
+      if(!foneOk(num)){toast('Preencha o número de cópia acima com um WhatsApp válido para receber o teste.',true);break}
+      chamarAvisos({acao:'teste',numero:num,template:$('#av-template').value.trim()},b);break}
+    case 'av-rodar':chamarAvisos({acao:'rodar'},b);break;
     case 'reativar':{
       if(!isAdmin())break;
       const r=await sb.from('motos').update({status:'ativa',retirada_em:null,retirada_motivo:null,retirada_obs:null}).eq('id',id);
@@ -1024,6 +1373,10 @@ $('#t-moto').addEventListener('change',()=>lastKmHint('#t-moto','#t-km-hint'));
 $('#t-tipo').addEventListener('change',()=>{$('#t-outro-box').hidden=$('#t-tipo').value!=='outro'});
 $('#f-abast').addEventListener('change',renderAbast);
 $('#f-manut').addEventListener('change',renderManut);
+$('#f-docs').addEventListener('change',renderDocs);
+$('#f-docs-tipo').addEventListener('change',renderDocs);
+$('#rel-mes').addEventListener('change',renderRel);
+$('#d-tipo').addEventListener('change',()=>{$('#d-pago-box').hidden=$('#d-tipo').value!=='multa'});
 function ppl(){const l=num($('#a-litros').value),v=num($('#a-valor').value);$('#a-ppl').textContent=(l>0&&v>0)?'= R$ '+nf2.format(v/l)+' por litro':''}
 $('#a-litros').addEventListener('input',ppl);$('#a-valor').addEventListener('input',ppl);
 function kmWarn(selId,inputId,hintId){
