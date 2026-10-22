@@ -137,6 +137,8 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:13p
 .docs{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:10px 0 0;font-size:13px}
 .docs dt{color:var(--muted)} .docs dd{margin:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
+.docline{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+input[type=file]{width:100%;font:14px var(--font-body);color:var(--fg);background:var(--surface-2);border:1px dashed var(--line);border-radius:6px;padding:9px 10px;min-width:0}
 
 .panel{background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:14px}
 .panel .panel-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
@@ -242,6 +244,7 @@ body:not(.is-admin) .admin-only{display:none!important}
       <div class="stats" id="stats"></div>
       <div id="nudge"></div>
       <div class="card"><h3>Manutenções a fazer</h3><div id="alerts"></div></div>
+      <div id="doc-alerts"></div>
       <div><h3 style="margin-bottom:10px">Frota</h3><div id="fleet-table"></div></div>
     </section>
 
@@ -272,6 +275,13 @@ body:not(.is-admin) .admin-only{display:none!important}
           <div class="field"><label for="m-cat">Categoria</label><input type="text" id="m-cat" placeholder="Particular, Aluguel…"></div>
           <div class="field"><label for="m-prop">Proprietário</label><input type="text" id="m-prop"></div>
           <div class="field"><label for="m-doc">CNPJ / CPF</label><input type="text" id="m-doc"></div>
+          <div class="sect-title label-up">Documentos</div>
+          <div class="field"><label for="m-ipva">IPVA pago até o ano</label><select id="m-ipva"></select></div>
+          <div class="field"><label for="m-lic">Licenciamento pago até o ano</label><select id="m-lic"></select></div>
+          <div class="field wide"><label for="m-crlv">Anexar CRLV (PDF ou foto)</label>
+            <input type="file" id="m-crlv" accept=".pdf,image/jpeg,image/png">
+            <span class="hint">Até 10 MB. Todos os usuários do sistema conseguem abrir o arquivo.</span>
+            <div id="m-crlv-atual" class="small"></div></div>
           <div class="form-actions"><button class="btn primary" type="submit" id="m-save">Salvar moto</button><button class="btn" type="button" data-act="close-moto">Cancelar</button></div>
         </form>
       </div>
@@ -452,6 +462,35 @@ const label=m=>((m.marca||'')+' '+(m.modelo||'')).trim();
 const tipoNome=r=>r.tipo==='outro'?(r.descricao||'Outro serviço'):(tipoMap[r.tipo]?tipoMap[r.tipo].nome:r.tipo);
 const canDel=r=>isAdmin()||(S.perfil&&r.usuario_id===S.perfil.id&&(Date.now()-new Date(r.criado_em).getTime())<864e5);
 
+/* ---------- documentos da moto ---------- */
+const BUCKET='documentos';
+const ANO=new Date().getFullYear();
+function docStatus(m,k){
+  const y=k==='ipva'?m.ipva_ano:m.lic_ano;
+  const nome=k==='ipva'?'IPVA':'Licenciamento',curto=k==='ipva'?'IPVA':'Licenc.';
+  if(!y)return {level:'none',nome,txt:nome+' não informado',curto:curto+' s/ info'};
+  if(y>=ANO)return {level:'ok',nome,txt:nome+' pago (exercício '+y+')',curto:curto+' pago'};
+  return {level:'bad',nome,txt:nome+' '+ANO+' pendente (pago até '+y+')',curto:curto+' pendente'};
+}
+const docPill=(m,k)=>{const s=docStatus(m,k);return '<span class="pill '+s.level+'" title="'+esc(s.txt)+'">'+esc(s.curto)+'</span>'};
+const crlvBtn=m=>m.crlv_path
+  ?'<button class="btn small" type="button" data-act="abrir-crlv" data-id="'+esc(m.id)+'">Abrir CRLV</button>'
+  :'<span class="small muted">CRLV não anexado</span> <button class="link admin-only" type="button" data-act="open-moto" data-id="'+esc(m.id)+'">Anexar</button>';
+function anoOpts(sel,val){
+  const el=$(sel);const anos=[];
+  for(let y=ANO+1;y>=ANO-3;y--)anos.push(y);
+  if(val&&anos.indexOf(Number(val))<0){anos.push(Number(val));anos.sort((a,b)=>b-a)}
+  el.innerHTML='<option value="">Não informado / não pago</option>'+anos.map(y=>'<option value="'+y+'">'+y+'</option>').join('');
+  el.value=val?String(val):'';
+}
+function extDoc(f){
+  const t=(f.type||'').toLowerCase(),n=(f.name||'').toLowerCase();
+  if(t==='application/pdf'||/\.pdf$/.test(n))return 'pdf';
+  if(t==='image/png'||/\.png$/.test(n))return 'png';
+  if(t==='image/jpeg'||/\.jpe?g$/.test(n))return 'jpg';
+  return '';
+}
+
 function intervalos(){
   const saved=(S.cfg&&S.cfg.itens)||{};
   const out={};
@@ -515,6 +554,7 @@ function dbErr(error,fallback){
   const c=error.code||'';
   if(c==='23505')toast('Já existe um registro igual (placa repetida).',true);
   else if(c==='42501'||/row-level security/i.test(error.message||''))toast('Você não tem permissão para fazer isso.',true);
+  else if(c==='PGRST204'||c==='42703'||/schema cache|column .* does not exist/i.test(error.message||''))toast('O banco ainda não tem os campos de documentos. Rode o script 03-documentos.sql no Supabase.',true);
   else if(c==='PGRST301'||/JWT/i.test(error.message||''))toast('Sua sessão expirou. Entre de novo.',true);
   else toast(fallback||'Não foi possível salvar agora. Tente de novo.',true);
 }
@@ -583,14 +623,21 @@ function renderDash(){
     '<li>'+plate(i.m.placa,true)+'<div class="what"><b>'+esc(tipoNome({tipo:i.s.tipo}))+'</b><span class="small muted">'+esc(svcText(i.s))+'</span></div>'+pill(i.s.level)+
     '<button class="btn small" type="button" data-act="open-manut" data-moto="'+esc(i.m.id)+'" data-tipo="'+i.s.tipo+'">Registrar</button></li>').join('')+'</ul>';
 
+  const dp=[];
+  as.forEach(m=>['ipva','lic'].forEach(k=>{const s=docStatus(m,k);if(s.level!=='ok')dp.push({m,s})}));
+  $('#doc-alerts').innerHTML=(S.loaded&&dp.length)?'<div class="card"><h3>Documentos pendentes</h3><ul class="alerts">'+dp.map(i=>
+    '<li>'+plate(i.m.placa,true)+'<div class="what"><b>'+esc(i.s.nome)+'</b><span class="small muted">'+esc(i.s.txt)+'</span></div>'+
+    '<span class="pill '+i.s.level+'">'+(i.s.level==='bad'?'Pendente':'Não informado')+'</span>'+
+    '<button class="btn small admin-only" type="button" data-act="open-moto" data-id="'+esc(i.m.id)+'">Atualizar</button></li>').join('')+'</ul></div>':'';
+
   if(!as.length){$('#fleet-table').innerHTML='';return}
-  $('#fleet-table').innerHTML='<div class="tablewrap"><table><thead><tr><th>Moto</th><th class="r">Km atual</th><th class="r">Consumo médio</th><th>Último abastecimento</th><th>Óleo</th></tr></thead><tbody>'+
+  $('#fleet-table').innerHTML='<div class="tablewrap"><table><thead><tr><th>Moto</th><th class="r">Km atual</th><th class="r">Consumo médio</th><th>Último abastecimento</th><th>Óleo</th><th>Documentos</th></tr></thead><tbody>'+
     as.map(m=>{const st=motoStats(m);const o=svcStatus('oleo',st);
       return '<tr><td><div style="display:flex;gap:10px;align-items:center">'+plate(m.placa,true)+'<span>'+esc(m.apelido||label(m))+'</span></div></td>'+
       '<td class="r">'+(st.curKm!==null?nf0.format(st.curKm)+' km':'<span class="muted">não informado</span>')+'</td>'+
       '<td class="r">'+(st.avg?nf1.format(st.avg)+' km/l':'<span class="muted">—</span>')+'</td>'+
       '<td>'+(st.lastFuel?fmtD(st.lastFuel):'<span class="muted">—</span>')+'</td>'+
-      '<td>'+(o?pill(o.level)+' <span class="small muted">'+(o.last&&o.kmLeft!==null?(o.kmLeft<=0?'vencida':nf0.format(o.kmLeft)+' km'):'')+'</span>':'')+'</td></tr>'}).join('')+'</tbody></table></div>';
+      '<td>'+(o?pill(o.level)+' <span class="small muted">'+(o.last&&o.kmLeft!==null?(o.kmLeft<=0?'vencida':nf0.format(o.kmLeft)+' km'):'')+'</span>':'')+'</td><td><div class="docline">'+docPill(m,'ipva')+docPill(m,'lic')+'</div></td></tr>'}).join('')+'</tbody></table></div>';
 }
 
 function motoCard(m){
@@ -600,6 +647,7 @@ function motoCard(m){
     '<div class="moto-top">'+plate(m.placa)+'<div class="moto-id"><h3>'+esc(m.apelido||label(m))+'</h3><p>'+(m.apelido?esc(label(m))+' · ':'')+esc([m.ano_fab&&m.ano_modelo?m.ano_fab+'/'+m.ano_modelo:(m.ano_fab||m.ano_modelo||''),m.cor].filter(Boolean).join(' · '))+'</p></div></div>'+
     (off?'<p class="small muted">Retirada em '+fmtD(m.retirada_em)+' · '+esc(m.retirada_motivo||'')+(m.retirada_obs?' · '+esc(m.retirada_obs):'')+'</p>':
     '<dl class="facts"><div><dt>Km atual</dt><dd>'+(st.curKm!==null?nf0.format(st.curKm):'—')+'</dd></div><div><dt>Consumo</dt><dd>'+(st.avg?nf1.format(st.avg)+' km/l':'—')+'</dd></div><div><dt>Óleo</dt><dd>'+(o?pill(o.level):'—')+'</dd></div></dl>')+
+    '<div class="docline">'+docPill(m,'ipva')+docPill(m,'lic')+crlvBtn(m)+'</div>'+
     '<details><summary>Dados do documento</summary><dl class="docs">'+
       '<dt>Renavam</dt><dd>'+esc(m.renavam||'—')+'</dd><dt>Chassi</dt><dd>'+esc(m.chassi||'—')+'</dd><dt>Motor</dt><dd>'+esc(m.motor||'—')+'</dd>'+
       '<dt>Combustível</dt><dd>'+esc(m.combustivel||'—')+'</dd><dt>Categoria</dt><dd>'+esc(m.categoria||'—')+'</dd><dt>Proprietário</dt><dd>'+esc(m.proprietario||'—')+'</dd><dt>CNPJ / CPF</dt><dd>'+esc(m.doc||'—')+'</dd></dl></details>'+
@@ -715,6 +763,11 @@ function openMoto(id){
   $('#form-moto').reset();$('#m-id').value='';$('#m-comb').value='Gasolina';
   const m=id&&motoById(id);
   $('#moto-form-title').textContent=m?'Editar '+m.placa:'Cadastrar moto';
+  anoOpts('#m-ipva',m&&m.ipva_ano);anoOpts('#m-lic',m&&m.lic_ano);
+  $('#m-crlv').value='';
+  $('#m-crlv-atual').innerHTML=(m&&m.crlv_path)
+    ?'Arquivo atual: <b>'+esc(m.crlv_nome||'CRLV')+'</b> · <button class="link" type="button" data-act="abrir-crlv" data-id="'+esc(m.id)+'">Abrir</button> · <label><input type="checkbox" id="m-crlv-rem"> remover</label><br><span class="muted">Escolher outro arquivo acima substitui este.</span>'
+    :'';
   if(m){
     $('#m-id').value=m.id;$('#m-placa').value=m.placa||'';$('#m-apelido').value=m.apelido||'';$('#m-marca').value=m.marca||'';$('#m-modelo').value=m.modelo||'';
     $('#m-anofab').value=m.ano_fab||'';$('#m-anomod').value=m.ano_modelo||'';$('#m-cor').value=m.cor||'';$('#m-comb').value=m.combustivel||'';
@@ -736,6 +789,27 @@ function openRet(id){
 }
 
 /* ---------- gravação ---------- */
+function stErr(error){
+  console.error(error);
+  const m=(error&&error.message)||'';
+  toast(/bucket not found/i.test(m)?'A pasta de documentos não existe no Supabase. Rode o script 03-documentos.sql.'
+    :/size|too large|exceed/i.test(m)?'Arquivo grande demais. O máximo é 10 MB.'
+    :/mime|not allowed|invalid/i.test(m)?'Tipo de arquivo não aceito. Use PDF, JPG ou PNG.'
+    :/row-level security|unauthorized|permission/i.test(m)?'Você não tem permissão para enviar documentos.'
+    :'Não foi possível enviar o arquivo. Tente de novo.',true);
+}
+async function abrirCrlv(id){
+  const m=motoById(id);if(!m||!m.crlv_path)return;
+  const w=window.open('','_blank');
+  const {data,error}=await sb.storage.from(BUCKET).createSignedUrl(m.crlv_path,300);
+  if(error||!data||!data.signedUrl){
+    if(w)w.close();
+    console.error(error);
+    toast(/not found/i.test((error&&error.message)||'')?'O arquivo não foi encontrado. Anexe o CRLV de novo.':'Não foi possível abrir o arquivo. Tente de novo.',true);
+    return;
+  }
+  if(w){try{w.opener=null}catch(e){}w.location.href=data.signedUrl}else{location.href=data.signedUrl}
+}
 async function busy(btn,fn){
   if(btn)btn.disabled=true;
   try{await fn()}finally{if(btn)btn.disabled=false}
@@ -751,10 +825,27 @@ $('#form-moto').addEventListener('submit',async e=>{
   const data={placa,apelido:$('#m-apelido').value.trim(),marca:$('#m-marca').value.trim(),modelo:$('#m-modelo').value.trim(),
     ano_fab:$('#m-anofab').value.trim(),ano_modelo:$('#m-anomod').value.trim(),cor:$('#m-cor').value.trim(),combustivel:$('#m-comb').value.trim(),
     km_inicial:isFinite(km)?km:null,renavam:$('#m-renavam').value.trim(),chassi:$('#m-chassi').value.trim().toUpperCase(),motor:$('#m-motor').value.trim().toUpperCase(),
-    categoria:$('#m-cat').value.trim(),proprietario:$('#m-prop').value.trim(),doc:$('#m-doc').value.trim()};
+    categoria:$('#m-cat').value.trim(),proprietario:$('#m-prop').value.trim(),doc:$('#m-doc').value.trim(),ipva_ano:Number($('#m-ipva').value)||null,lic_ano:Number($('#m-lic').value)||null};
   await busy($('#m-save'),async()=>{
-    const r=id?await sb.from('motos').update(data).eq('id',id):await sb.from('motos').insert(data);
-    if(r.error){dbErr(r.error);return}
+    const novoId=id||(window.crypto&&crypto.randomUUID?crypto.randomUUID():null);
+    const file=$('#m-crlv').files&&$('#m-crlv').files[0];
+    const rem=!!($('#m-crlv-rem')&&$('#m-crlv-rem').checked);
+    const antigo=id&&motoById(id)?motoById(id).crlv_path:null;
+    let novo=null;
+    if(file){
+      const ext=extDoc(file);
+      if(!ext){toast('Arquivo não aceito. Use PDF, JPG ou PNG.',true);return}
+      if(file.size>10*1024*1024){toast('Arquivo grande demais. O máximo é 10 MB.',true);return}
+      if(!novoId){toast('Este navegador é antigo demais para enviar arquivos.',true);return}
+      const path='crlv/'+novoId+'/'+Date.now()+'.'+ext;
+      const up=await sb.storage.from(BUCKET).upload(path,file,{contentType:ext==='pdf'?'application/pdf':(ext==='png'?'image/png':'image/jpeg'),upsert:false});
+      if(up.error){stErr(up.error);return}
+      novo=path;
+      data.crlv_path=path;data.crlv_nome=file.name.slice(0,120);data.crlv_em=new Date().toISOString();
+    }else if(rem){data.crlv_path=null;data.crlv_nome=null;data.crlv_em=null}
+    const r=id?await sb.from('motos').update(data).eq('id',id):await sb.from('motos').insert(novoId?Object.assign({id:novoId},data):data);
+    if(r.error){if(novo){try{await sb.storage.from(BUCKET).remove([novo])}catch(e){}}dbErr(r.error);return}
+    if(antigo&&(novo||rem)){try{await sb.storage.from(BUCKET).remove([antigo])}catch(e){}}
     $('#panel-moto').hidden=true;toast(id?'Moto '+placa+' atualizada.':'Moto '+placa+' cadastrada.');await loadAll();
   });
 });
@@ -781,6 +872,7 @@ async function excluirMoto(){
   await busy(b,async()=>{
     const r=await sb.from('motos').delete().eq('id',id);
     if(r.error){dbErr(r.error);return}
+    if(m.crlv_path){try{await sb.storage.from(BUCKET).remove([m.crlv_path])}catch(e){}}
     $('#panel-ret').hidden=true;toast(m.placa+' excluída.');await loadAll();
   });
 }
@@ -829,8 +921,10 @@ async function saveAjustes(){
 }
 
 /* ---------- usuários ---------- */
+// Aceita a URL colada com sufixo (ex.: .../rest/v1/) e usa só o endereço base do projeto
+const baseUrl=()=>{try{return new URL(CFG.SUPABASE_URL).origin}catch(e){return CFG.SUPABASE_URL}};
 const userToEmail=u=>{
-  const s=String(u||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9._-]/g,'');
+  const s=String(u||'').trim().toLowerCase().split('@')[0].normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9._-]/g,'');
   return s?s+'@'+(CFG.EMAIL_DOMAIN||'frota.sinfel.com.br'):'';
 };
 $('#form-usuario').addEventListener('submit',async e=>{
@@ -841,7 +935,7 @@ $('#form-usuario').addEventListener('submit',async e=>{
   if(senha.length<6){toast('A senha precisa ter pelo menos 6 caracteres.',true);return}
   await busy($('#u-save'),async()=>{
     // cliente separado, sem guardar sessão, para não trocar o login do administrador
-    const tmp=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+    const tmp=window.supabase.createClient(baseUrl(),CFG.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
     const {data,error}=await tmp.auth.signUp({email:userToEmail(usuario),password:senha,options:{data:{nome}}});
     if(error){
       console.error(error);
@@ -900,6 +994,7 @@ document.addEventListener('click',async e=>{
     case 'close-usuario':$('#panel-usuario').hidden=true;break;
     case 'close-senha':$('#panel-senha').hidden=true;break;
     case 'excluir-moto':excluirMoto();break;
+    case 'abrir-crlv':abrirCrlv(id);break;
     case 'reativar':{
       if(!isAdmin())break;
       const r=await sb.from('motos').update({status:'ativa',retirada_em:null,retirada_motivo:null,retirada_obs:null}).eq('id',id);
@@ -985,7 +1080,13 @@ $('#form-login').addEventListener('submit',async e=>{
   const btn=$('#l-btn');btn.disabled=true;btn.textContent='Entrando…';
   try{
     const {error}=await sb.auth.signInWithPassword({email,password:pass});
-    if(error){msg.textContent=/invalid|credentials/i.test(error.message||'')?'Usuário ou senha incorretos.':'Não foi possível entrar. Tente de novo.';return}
+    if(error){
+      const m=error.message||'';
+      console.error(error);
+      msg.textContent=/invalid login credentials/i.test(m)?'Usuário ou senha incorretos.'
+        :/not confirmed/i.test(m)?'Este usuário ainda não foi confirmado no Supabase.'
+        :'Não foi possível entrar ('+(m||'erro desconhecido')+'). Se continuar, avise o administrador.';
+      return}
     await enter();
   }finally{btn.disabled=false;btn.textContent='Entrar'}
 });
@@ -999,7 +1100,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.perfil)
     s.textContent=!window.supabase?'Não foi possível carregar a biblioteca do sistema. Confira a internet.':'Sistema ainda não configurado: preencha SUPABASE_URL e SUPABASE_ANON_KEY no arquivo config.js.';
     return;
   }
-  sb=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY);
+  sb=window.supabase.createClient(baseUrl(),CFG.SUPABASE_ANON_KEY);
   sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT')showLogin()});
   const {data}=await sb.auth.getSession();
   if(data&&data.session)await enter();else showLogin();
