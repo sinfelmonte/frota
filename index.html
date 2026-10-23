@@ -1327,7 +1327,7 @@ document.addEventListener('click',async e=>{
     case 'av-teste':{
       const l=emailsLista($('#av-copia').value);
       if(!l.length||!emailsOk(l)){toast('Preencha o e-mail de cópia acima com um endereço válido para receber o teste.',true);break}
-      chamarAvisos({acao:'teste',email:l[0]},b);break}
+      chamarAvisos({acao:'teste',email:l.join(', ')},b);break}
     case 'av-rodar':chamarAvisos({acao:'rodar'},b);break;
     case 'reativar':{
       if(!isAdmin())break;
