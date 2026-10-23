@@ -247,7 +247,7 @@ body:not(.is-admin) .admin-only{display:none!important}
         <div class="btns">
           <button class="btn primary" data-act="open-abast" type="button">Registrar abastecimento</button>
           <button class="btn" data-act="open-manut" type="button">Registrar manutenção</button>
-          <button class="btn admin-only" data-act="wa-resumo" type="button">Resumo no WhatsApp</button>
+          <button class="btn admin-only" data-act="email-resumo" type="button">Resumo por e-mail</button>
         </div>
       </div>
       <div class="stats" id="stats"></div>
@@ -289,14 +289,14 @@ body:not(.is-admin) .admin-only{display:none!important}
           <div class="field"><label for="m-lic">Licenciamento pago até o ano</label><select id="m-lic"></select></div>
           <div class="field"><label for="m-ipva-venc">Próximo vencimento do IPVA</label><input type="date" id="m-ipva-venc"></div>
           <div class="field"><label for="m-lic-venc">Próximo vencimento do licenc.</label><input type="date" id="m-lic-venc"></div>
-          <p class="hint field wide">Com a data preenchida, o sistema avisa 30 dias antes (e por WhatsApp, se ligado). Ao pagar, atualize o ano pago e a próxima data.</p>
+          <p class="hint field wide">Com a data preenchida, o sistema avisa 30 dias antes (e por e-mail, se ligado). Ao pagar, atualize o ano pago e a próxima data.</p>
           <div class="field wide"><label for="m-crlv">Anexar CRLV (PDF ou foto)</label>
             <input type="file" id="m-crlv" accept=".pdf,image/jpeg,image/png">
             <span class="hint">Até 10 MB. Todos os usuários do sistema conseguem abrir o arquivo.</span>
             <div id="m-crlv-atual" class="small"></div></div>
-          <div class="sect-title label-up">Avisos por WhatsApp</div>
+          <div class="sect-title label-up">Avisos por e-mail</div>
           <div class="field"><label for="m-resp">Responsável pela moto</label><input type="text" id="m-resp" placeholder="ex.: João"></div>
-          <div class="field"><label for="m-fone">WhatsApp que recebe os avisos</label><input type="text" id="m-fone" inputmode="tel" placeholder="(34) 99999-0001"><span class="hint">Com DDD. Cada moto pode ter um número diferente.</span></div>
+          <div class="field"><label for="m-email">E-mail que recebe os avisos</label><input type="text" inputmode="email" id="m-email" autocapitalize="none" spellcheck="false" placeholder="nome@empresa.com.br"><span class="hint">Pode ter mais de um, separados por vírgula.</span></div>
           <div class="form-actions"><button class="btn primary" type="submit" id="m-save">Salvar moto</button><button class="btn" type="button" data-act="close-moto">Cancelar</button></div>
         </form>
       </div>
@@ -431,20 +431,19 @@ body:not(.is-admin) .admin-only{display:none!important}
 
     <!-- AVISOS -->
     <section class="view admin-only" id="view-avisos" hidden>
-      <div class="head-row"><h2>Avisos por WhatsApp</h2></div>
-      <div class="note"><p>Todo dia às 8h o sistema confere as motos. Quando um serviço vence, manda uma mensagem pelo WhatsApp oficial (Meta) para o número cadastrado na moto e repete no intervalo escolhido, até o serviço ser registrado.</p></div>
+      <div class="head-row"><h2>Avisos por e-mail</h2></div>
+      <div class="note"><p>Todo dia às 8h o sistema confere as motos. Quando um serviço vence, manda um e-mail para o endereço cadastrado na moto e repete no intervalo escolhido, até o serviço ser registrado.</p></div>
       <div id="avisos-aviso"></div>
       <form class="grid" id="form-avisos" autocomplete="off">
         <div class="field check wide"><input type="checkbox" id="av-ativo"><label for="av-ativo"><b>Enviar avisos automáticos</b></label></div>
         <div class="field"><label for="av-horas">Repetir o aviso a cada</label>
           <select id="av-horas"><option value="24">24 horas</option><option value="48">48 horas</option><option value="72">72 horas</option><option value="96">96 horas</option><option value="168">7 dias</option></select></div>
-        <div class="field"><label for="av-template">Nome do modelo aprovado na Meta</label><input type="text" id="av-template" autocapitalize="none" spellcheck="false"></div>
-        <div class="field check"><input type="checkbox" id="av-man"><label for="av-man">Avisar manutenção vencida</label></div>
+                <div class="field check"><input type="checkbox" id="av-man"><label for="av-man">Avisar manutenção vencida</label></div>
         <div class="field check"><input type="checkbox" id="av-doc"><label for="av-doc">Avisar documentos (IPVA, licenc., seguro, multas)</label></div>
-        <div class="field wide"><label for="av-copia">Número que recebe cópia de todos os avisos (opcional)</label><input type="text" id="av-copia" inputmode="tel" placeholder="(34) 99999-0001"></div>
+        <div class="field wide"><label for="av-copia">E-mail que recebe cópia de todos os avisos (opcional)</label><input type="text" id="av-copia" autocapitalize="none" spellcheck="false" placeholder="gerente@empresa.com.br, outro@empresa.com.br"></div>
         <div class="form-actions">
           <button class="btn primary" type="submit" id="av-save">Salvar</button>
-          <button class="btn" type="button" data-act="av-teste" id="av-teste">Enviar mensagem de teste</button>
+          <button class="btn" type="button" data-act="av-teste" id="av-teste">Enviar e-mail de teste</button>
           <button class="btn" type="button" data-act="av-rodar" id="av-rodar">Verificar e enviar agora</button>
         </div>
       </form>
@@ -590,12 +589,10 @@ function docItems(m){
   });
   return out;
 }
-// telefone: só dígitos, com 55 na frente
-function foneNorm(v){let d=String(v||'').replace(/\D/g,'');if(!d)return '';if(d.length===10||d.length===11)d='55'+d;return d}
-const foneOk=d=>/^55\d{10,11}$/.test(d);
-const foneFmt=d=>String(d||'').replace(/^55(\d{2})(\d{4,5})(\d{4})$/,'+55 ($1) $2-$3');
-const ASSUNTO={oleo:'Necessário fazer a troca de óleo',corrente:'Necessário lubrificar a corrente',filtro_ar:'Necessário trocar o filtro de ar',vela:'Necessário trocar a vela de ignição',
-  freio:'Necessário revisar ou trocar as pastilhas/lonas de freio',kit:'Necessário trocar o kit de transmissão',pneus:'Necessário trocar os pneus',bateria:'Necessário trocar a bateria',revisao:'Necessária a revisão geral'};
+// e-mails: aceita vários separados por vírgula ou ponto e vírgula
+const EMAIL_RE=/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/;
+const emailsLista=v=>[...new Set(String(v||'').split(/[,;\s]+/).map(x=>x.trim().toLowerCase()).filter(Boolean))];
+const emailsOk=l=>l.every(x=>EMAIL_RE.test(x));
 const docPill=(m,k)=>{const s=docStatus(m,k);return '<span class="pill '+s.level+'" title="'+esc(s.txt)+'">'+esc(s.curto)+'</span>'};
 const crlvBtn=m=>m.crlv_path
   ?'<button class="btn small" type="button" data-act="abrir-crlv" data-id="'+esc(m.id)+'">Abrir CRLV</button>'
@@ -678,7 +675,7 @@ function dbErr(error,fallback){
   const c=error.code||'';
   if(c==='23505')toast('Já existe um registro igual (placa repetida).',true);
   else if(c==='42501'||/row-level security/i.test(error.message||''))toast('Você não tem permissão para fazer isso.',true);
-  else if(c==='PGRST204'||c==='42703'||/schema cache|column .* does not exist/i.test(error.message||''))toast('O banco ainda não tem os campos novos. Rode os scripts 03-documentos.sql e 04-recursos.sql no Supabase.',true);
+  else if(c==='PGRST204'||c==='42703'||/schema cache|column .* does not exist/i.test(error.message||''))toast('O banco ainda não tem os campos novos. Rode os scripts 03, 04 e 06 (da pasta banco-de-dados) no Supabase.',true);
   else if(c==='PGRST301'||/JWT/i.test(error.message||''))toast('Sua sessão expirou. Entre de novo.',true);
   else toast(fallback||'Não foi possível salvar agora. Tente de novo.',true);
 }
@@ -793,10 +790,10 @@ function motoCard(m){
     '<details><summary>Dados do documento</summary><dl class="docs">'+
       '<dt>Renavam</dt><dd>'+esc(m.renavam||'—')+'</dd><dt>Chassi</dt><dd>'+esc(m.chassi||'—')+'</dd><dt>Motor</dt><dd>'+esc(m.motor||'—')+'</dd>'+
       '<dt>Combustível</dt><dd>'+esc(m.combustivel||'—')+'</dd><dt>Categoria</dt><dd>'+esc(m.categoria||'—')+'</dd><dt>Proprietário</dt><dd>'+esc(m.proprietario||'—')+'</dd><dt>CNPJ / CPF</dt><dd>'+esc(m.doc||'—')+'</dd>'+
-      '<dt>Responsável</dt><dd>'+esc(m.responsavel||'—')+'</dd><dt>WhatsApp</dt><dd>'+esc(m.whatsapp?foneFmt(m.whatsapp):'—')+'</dd></dl></details>'+
+      '<dt>Responsável</dt><dd>'+esc(m.responsavel||'—')+'</dd><dt>E-mail</dt><dd>'+esc(m.email||'—')+'</dd></dl></details>'+
     '<div class="row-actions">'+
       (off?'<span class="admin-only"><button class="btn small" type="button" data-act="reativar" data-id="'+esc(m.id)+'">Reativar</button> <button class="btn small danger" type="button" data-act="open-ret" data-id="'+esc(m.id)+'">Excluir…</button></span>'
-          :'<button class="btn small" type="button" data-act="open-abast" data-moto="'+esc(m.id)+'">Abastecer</button><button class="btn small" type="button" data-act="open-manut" data-moto="'+esc(m.id)+'">Manutenção</button><button class="btn small admin-only" type="button" data-act="wa-moto" data-id="'+esc(m.id)+'">WhatsApp</button><button class="btn small admin-only" type="button" data-act="open-moto" data-id="'+esc(m.id)+'">Editar</button><button class="btn small admin-only" type="button" data-act="open-ret" data-id="'+esc(m.id)+'">Retirar</button>')+
+          :'<button class="btn small" type="button" data-act="open-abast" data-moto="'+esc(m.id)+'">Abastecer</button><button class="btn small" type="button" data-act="open-manut" data-moto="'+esc(m.id)+'">Manutenção</button><button class="btn small admin-only" type="button" data-act="email-moto" data-id="'+esc(m.id)+'">E-mail</button><button class="btn small admin-only" type="button" data-act="open-moto" data-id="'+esc(m.id)+'">Editar</button><button class="btn small admin-only" type="button" data-act="open-ret" data-id="'+esc(m.id)+'">Retirar</button>')+
     '</div></article>';
 }
 function renderMotos(){
@@ -940,34 +937,32 @@ function renderAvisos(){
   const box=$('#avisos-aviso'),form=$('#form-avisos');
   if(!S.loaded)return;
   if(!S.avOk){
-    box.innerHTML='<div class="banner">Esta aba ainda não está ligada no banco. Rode o script 04-recursos.sql no Supabase.</div>';
+    box.innerHTML='<div class="banner">Esta aba ainda não está ligada no banco. Rode os scripts 04 e 06 no Supabase.</div>';
     form.hidden=true;$('#avisos-sem').innerHTML='';$('#avisos-log').innerHTML='';return;
   }
   box.innerHTML='';form.hidden=false;
-  const c=S.av||{ativo:false,intervalo_horas:48,avisar_manutencao:true,avisar_documentos:false,copia_numero:'',template:'aviso_frota'};
+  const c=S.av||{ativo:false,intervalo_horas:48,avisar_manutencao:true,avisar_documentos:false,copia_email:''};
   if(!S.avDirty){
     $('#av-ativo').checked=!!c.ativo;
     const sel=$('#av-horas');if(![].some.call(sel.options,o=>Number(o.value)===c.intervalo_horas))sel.insertAdjacentHTML('beforeend','<option value="'+c.intervalo_horas+'">'+c.intervalo_horas+' horas</option>');
     sel.value=String(c.intervalo_horas);
     $('#av-man').checked=!!c.avisar_manutencao;$('#av-doc').checked=!!c.avisar_documentos;
-    $('#av-copia').value=c.copia_numero?foneFmt(c.copia_numero):'';$('#av-template').value=c.template||'aviso_frota';
+    $('#av-copia').value=c.copia_email||'';
   }
-  const sem=ativas().filter(m=>!m.whatsapp);
-  $('#avisos-sem').innerHTML=sem.length?'<div class="note"><p><b>Sem WhatsApp cadastrado:</b> '+sem.map(m=>esc(m.placa)).join(', ')+'. Cadastre o número em Motos → Editar para essas motos receberem aviso.</p></div>':'';
+  const sem=ativas().filter(m=>!m.email);
+  $('#avisos-sem').innerHTML=sem.length?'<div class="note"><p><b>Sem e-mail cadastrado:</b> '+sem.map(m=>esc(m.placa)).join(', ')+'. Cadastre o e-mail em Motos → Editar para essas motos receberem aviso (ou use o e-mail de cópia).</p></div>':'';
   $('#avisos-log').innerHTML=S.avLog.length?'<div class="tablewrap"><table><thead><tr><th>Quando</th><th>Moto</th><th>Assunto</th><th>Para</th><th>Situação</th></tr></thead><tbody>'+
     S.avLog.map(x=>{const m=motoById(x.moto_id);
-      return '<tr><td>'+esc(new Date(x.enviado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))+'</td><td>'+(m?plate(m.placa,true):'<span class="muted">—</span>')+'</td><td>'+esc(x.assunto||'')+'</td><td class="small">'+esc(foneFmt(x.destino))+'</td>'+
+      return '<tr><td>'+esc(new Date(x.enviado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))+'</td><td>'+(m?plate(m.placa,true):'<span class="muted">—</span>')+'</td><td>'+esc(x.assunto||'')+'</td><td class="small">'+esc(x.destino)+'</td>'+
       '<td>'+(x.status==='enviado'?'<span class="pill ok">Enviado</span>':'<span class="pill bad" title="'+esc(x.erro||'')+'">Erro</span><div class="small muted">'+esc((x.erro||'').slice(0,90))+'</div>')+'</td></tr>'}).join('')+'</tbody></table></div>':
     '<div class="empty"><b>Nenhum aviso enviado ainda</b>Os envios aparecem aqui.</div>';
 }
 async function salvarAvisos(){
   if(!isAdmin())return;
-  const copia=foneNorm($('#av-copia').value);
-  if(copia&&!foneOk(copia)){toast('Número de cópia inválido. Use DDD + número.',true);return}
-  const tpl=$('#av-template').value.trim();
-  if(!/^[a-z0-9_]{1,200}$/.test(tpl)){toast('O nome do modelo usa só letras minúsculas, números e _ (ex.: aviso_frota).',true);return}
+  const copia=emailsLista($('#av-copia').value);
+  if(!emailsOk(copia)){toast('E-mail de cópia inválido. Confira o endereço.',true);return}
   await busy($('#av-save'),async()=>{
-    const r=await sb.from('avisos_config').upsert({id:1,ativo:$('#av-ativo').checked,intervalo_horas:Number($('#av-horas').value),avisar_manutencao:$('#av-man').checked,avisar_documentos:$('#av-doc').checked,copia_numero:copia||null,template:tpl,atualizado_em:new Date().toISOString()});
+    const r=await sb.from('avisos_config').upsert({id:1,ativo:$('#av-ativo').checked,intervalo_horas:Number($('#av-horas').value),avisar_manutencao:$('#av-man').checked,avisar_documentos:$('#av-doc').checked,copia_email:copia.length?copia.join(', '):null,atualizado_em:new Date().toISOString()});
     if(r.error){dbErr(r.error);return}
     S.avDirty=false;toast('Avisos salvos.');await loadAll();
   });
@@ -987,25 +982,15 @@ async function chamarAvisos(body,btn){
   });
 }
 
-/* ---------- texto para WhatsApp (envio manual) ---------- */
-function waLinhas(m){
-  const st=motoStats(m),L=[];
-  TIPOS.forEach(t=>{const sv=svcStatus(t.k,st);if(!sv||(sv.level!=='bad'&&sv.level!=='warn'))return;
-    L.push('• '+(sv.level==='bad'?(ASSUNTO[t.k]||'Necessário fazer: '+t.nome):'Em breve: '+t.nome)+' ('+svcText(sv)+')')});
-  docItems(m).forEach(i=>{if(i.level!=='none')L.push('• '+i.txt)});
-  return L;
-}
-function waAbrir(num,txt){window.open('https://wa.me/'+(num||'')+'?text='+encodeURIComponent(txt),'_blank','noopener')}
-function waMoto(id){
+/* ---------- e-mail manual (a função do Supabase envia) ---------- */
+function emailMoto(id,btn){
   const m=motoById(id);if(!m)return;
-  const L=waLinhas(m);
-  if(!L.length){toast(m.placa+' não tem pendências.');return}
-  waAbrir(m.whatsapp,'*Frota Sinfel · '+m.placa+'* ('+label(m)+')\n'+L.join('\n')+'\nQuando o serviço for feito, registre no sistema da frota.');
+  if(!m.email&&!(S.av&&S.av.copia_email)){toast('Cadastre o e-mail da moto (Motos → Editar) ou um e-mail de cópia na aba Avisos.',true);return}
+  chamarAvisos({acao:'moto',moto_id:id},btn);
 }
-function waResumo(){
-  const blocos=ativas().map(m=>({m,L:waLinhas(m)})).filter(x=>x.L.length);
-  if(!blocos.length){toast('Nada pendente na frota.');return}
-  waAbrir('','*Frota Sinfel · resumo de '+fmtD(todayStr())+'*\n\n'+blocos.map(x=>'*'+x.m.placa+'* ('+label(x.m)+')\n'+x.L.join('\n')).join('\n\n'));
+function emailResumo(btn){
+  if(!(S.av&&S.av.copia_email)){toast('Cadastre um e-mail de cópia na aba Avisos para receber o resumo.',true);return}
+  chamarAvisos({acao:'resumo'},btn);
 }
 
 /* ---------- abas e painéis ---------- */
@@ -1042,7 +1027,7 @@ function openMoto(id){
   $('#moto-form-title').textContent=m?'Editar '+m.placa:'Cadastrar moto';
   anoOpts('#m-ipva',m&&m.ipva_ano);anoOpts('#m-lic',m&&m.lic_ano);
   $('#m-ipva-venc').value=(m&&m.ipva_venc)||'';$('#m-lic-venc').value=(m&&m.lic_venc)||'';
-  $('#m-resp').value=(m&&m.responsavel)||'';$('#m-fone').value=(m&&m.whatsapp)?foneFmt(m.whatsapp):'';
+  $('#m-resp').value=(m&&m.responsavel)||'';$('#m-email').value=(m&&m.email)||'';
   $('#m-crlv').value='';
   $('#m-crlv-atual').innerHTML=(m&&m.crlv_path)
     ?'Arquivo atual: <b>'+esc(m.crlv_nome||'CRLV')+'</b> · <button class="link" type="button" data-act="abrir-crlv" data-id="'+esc(m.id)+'">Abrir</button> · <label><input type="checkbox" id="m-crlv-rem"> remover</label><br><span class="muted">Escolher outro arquivo acima substitui este.</span>'
@@ -1105,13 +1090,13 @@ $('#form-moto').addEventListener('submit',async e=>{
   const id=$('#m-id').value;
   if(S.motos.some(m=>m.placa===placa&&m.id!==id)){toast('Já existe uma moto com a placa '+placa+'.',true);return}
   const km=kmNum($('#m-km').value);
-  const fone=foneNorm($('#m-fone').value);
-  if(fone&&!foneOk(fone)){toast('WhatsApp inválido. Use DDD + número, ex.: (34) 99999-0001.',true);return}
+  const emails=emailsLista($('#m-email').value);
+  if(!emailsOk(emails)){toast('E-mail inválido. Confira o endereço.',true);return}
   const data={placa,apelido:$('#m-apelido').value.trim(),marca:$('#m-marca').value.trim(),modelo:$('#m-modelo').value.trim(),
     ano_fab:$('#m-anofab').value.trim(),ano_modelo:$('#m-anomod').value.trim(),cor:$('#m-cor').value.trim(),combustivel:$('#m-comb').value.trim(),
     km_inicial:isFinite(km)?km:null,renavam:$('#m-renavam').value.trim(),chassi:$('#m-chassi').value.trim().toUpperCase(),motor:$('#m-motor').value.trim().toUpperCase(),
     categoria:$('#m-cat').value.trim(),proprietario:$('#m-prop').value.trim(),doc:$('#m-doc').value.trim(),ipva_ano:Number($('#m-ipva').value)||null,lic_ano:Number($('#m-lic').value)||null,
-    ipva_venc:$('#m-ipva-venc').value||null,lic_venc:$('#m-lic-venc').value||null,responsavel:$('#m-resp').value.trim()||null,whatsapp:fone||null};
+    ipva_venc:$('#m-ipva-venc').value||null,lic_venc:$('#m-lic-venc').value||null,responsavel:$('#m-resp').value.trim()||null,email:emails.length?emails.join(', '):null};
   await busy($('#m-save'),async()=>{
     const novoId=id||(window.crypto&&crypto.randomUUID?crypto.randomUUID():null);
     const file=$('#m-crlv').files&&$('#m-crlv').files[0];
@@ -1335,14 +1320,14 @@ document.addEventListener('click',async e=>{
       if(r.error){dbErr(r.error);renderAll();break}
       if(d&&d.arquivo_path){try{await sb.storage.from(BUCKET).remove([d.arquivo_path])}catch(e){}}
       toast('Documento excluído.');await loadAll();break}
-    case 'wa-moto':waMoto(id);break;
-    case 'wa-resumo':waResumo();break;
+    case 'email-moto':emailMoto(id,b);break;
+    case 'email-resumo':emailResumo(b);break;
     case 'export-rel':exportCsv('rel');break;
     case 'imprimir':window.print();break;
     case 'av-teste':{
-      const num=foneNorm($('#av-copia').value);
-      if(!foneOk(num)){toast('Preencha o número de cópia acima com um WhatsApp válido para receber o teste.',true);break}
-      chamarAvisos({acao:'teste',numero:num,template:$('#av-template').value.trim()},b);break}
+      const l=emailsLista($('#av-copia').value);
+      if(!l.length||!emailsOk(l)){toast('Preencha o e-mail de cópia acima com um endereço válido para receber o teste.',true);break}
+      chamarAvisos({acao:'teste',email:l[0]},b);break}
     case 'av-rodar':chamarAvisos({acao:'rodar'},b);break;
     case 'reativar':{
       if(!isAdmin())break;
