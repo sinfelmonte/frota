@@ -453,10 +453,10 @@ body:not(.is-admin) .admin-only{display:none!important}
 
     <!-- INTERVALOS -->
     <section class="view admin-only" id="view-ajustes" hidden>
-      <div class="head-row"><h2>Intervalos de manutenção</h2></div>
-      <p class="muted">Defina de quanto em quanto tempo cada serviço deve ser feito. Vale para todas as motos. O alerta dispara pelo que vencer primeiro, km ou meses. Deixe em branco o que não quiser controlar.</p>
+      <div class="head-row"><h2>Serviços e intervalos de manutenção</h2></div>
+      <p class="muted">Defina de quanto em quanto tempo cada serviço deve ser feito. Vale para todas as motos. O alerta dispara pelo que vencer primeiro, km ou meses. Deixe em branco o que não quiser controlar. Use “Remover” para tirar um serviço da lista e o formulário abaixo para criar outro.</p>
       <div class="tablewrap"><table>
-        <thead><tr><th>Serviço</th><th class="r">A cada (km)</th><th class="r">A cada (meses)</th></tr></thead>
+        <thead><tr><th>Serviço</th><th class="r">A cada (km)</th><th class="r">A cada (meses)</th><th></th></tr></thead>
         <tbody id="ajustes-body"></tbody>
       </table></div>
       <div class="head-row" style="justify-content:flex-start">
@@ -464,6 +464,14 @@ body:not(.is-admin) .admin-only{display:none!important}
         <button class="btn" type="button" data-act="reset-ajustes">Voltar aos valores iniciais</button>
       </div>
       <p class="hint">Os valores iniciais são uma sugestão para uso de entrega. Confira o manual da moto e ajuste.</p>
+      <div id="tipos-removidos"></div>
+      <div class="card"><h3>Adicionar serviço</h3>
+        <form class="grid" id="form-tipo" autocomplete="off">
+          <div class="field wide"><label for="nt-nome">Nome do serviço</label><input type="text" id="nt-nome" maxlength="60" placeholder="ex.: Cabo do acelerador, Amortecedor"></div>
+          <div class="field"><label for="nt-km">A cada (km)</label><input type="text" id="nt-km" inputmode="numeric"></div>
+          <div class="field"><label for="nt-me">A cada (meses)</label><input type="text" id="nt-me" inputmode="numeric"></div>
+          <div class="form-actions"><button class="btn primary" type="submit" id="nt-add">Adicionar serviço</button><span class="hint">Preencha km, meses ou os dois. O serviço passa a aparecer ao registrar manutenção e nos alertas.</span></div>
+        </form></div>
     </section>
 
     <!-- USUÁRIOS -->
@@ -519,19 +527,19 @@ const kmNum=v=>{const t=String(v==null?'':v).replace(/\D/g,'');return t?Number(t
 const CFG=window.FROTA_CONFIG||{};
 let sb=null;
 
-const TIPOS=[
+const BASE=[
   {k:'oleo',nome:'Troca de óleo',km:2000,meses:6},
-  {k:'corrente',nome:'Lubrificação da corrente',km:500,meses:1},
+  {k:'corrente',nome:'Lubrificar e esticar corrente',km:500,meses:1},
   {k:'filtro_ar',nome:'Filtro de ar',km:6000,meses:12},
   {k:'vela',nome:'Vela de ignição',km:8000,meses:12},
   {k:'freio',nome:'Pastilhas / lonas de freio',km:8000,meses:12},
   {k:'kit',nome:'Kit transmissão (corrente, coroa, pinhão)',km:20000,meses:null},
-  {k:'pneus',nome:'Pneus',km:15000,meses:24},
+  {k:'pneu_diant',nome:'Pneu dianteiro',km:15000,meses:24},
+  {k:'pneu_tras',nome:'Pneu traseiro',km:15000,meses:24},
   {k:'bateria',nome:'Bateria',km:null,meses:24},
-  {k:'revisao',nome:'Revisão geral',km:6000,meses:6},
-  {k:'outro',nome:'Outro serviço',km:null,meses:null}
+  {k:'revisao',nome:'Revisão geral',km:6000,meses:6}
 ];
-const tipoMap=Object.fromEntries(TIPOS.map(t=>[t.k,t]));
+const LEGADO={pneus:'Pneus'}; // registros antigos, de antes de separar dianteiro e traseiro
 
 const S={motos:[],abast:[],manut:[],docs:[],docsOk:true,av:null,avLog:[],avOk:true,avDirty:false,perfis:[],cfg:null,perfil:null,armed:null,ajustesDirty:false,loaded:false,loginMsg:''};
 const isAdmin=()=>!!S.perfil&&S.perfil.papel==='admin';
@@ -542,7 +550,25 @@ const retiradas=()=>S.motos.filter(m=>m.status==='retirada').sort((a,b)=>a.placa
 const motoById=id=>S.motos.find(m=>m.id===id);
 const perfilNome=id=>{const p=S.perfis.find(x=>x.id===id);return p?p.nome:''};
 const label=m=>((m.marca||'')+' '+(m.modelo||'')).trim();
-const tipoNome=r=>r.tipo==='outro'?(r.descricao||'Outro serviço'):(tipoMap[r.tipo]?tipoMap[r.tipo].nome:r.tipo);
+// serviços de manutenção: os padrões do sistema + os que o administrador adicionou/removeu (guardado em config_intervalos.itens)
+const cfgItens=()=>(S.cfg&&S.cfg.itens)||{};
+function tipos(){
+  const it=cfgItens();
+  const base=BASE.filter(t=>!(it[t.k]&&it[t.k].oculto)).map(t=>{const x=it[t.k];return {k:t.k,nome:t.nome,custom:false,km:x?(x.km||null):t.km,meses:x?(x.meses||null):t.meses}});
+  const cust=Object.keys(it).filter(k=>k.indexOf('c_')===0&&!it[k].oculto).map(k=>({k,nome:it[k].nome||k,custom:true,km:it[k].km||null,meses:it[k].meses||null})).sort((a,b)=>a.nome.localeCompare(b.nome));
+  return base.concat(cust);
+}
+function tiposRemovidos(){
+  const it=cfgItens();
+  return BASE.filter(t=>it[t.k]&&it[t.k].oculto).map(t=>({k:t.k,nome:t.nome}))
+    .concat(Object.keys(it).filter(k=>k.indexOf('c_')===0&&it[k].oculto).map(k=>({k,nome:it[k].nome||k})));
+}
+function nomeTipo(k){
+  const b=BASE.find(t=>t.k===k);if(b)return b.nome;
+  const x=cfgItens()[k];if(x&&x.nome)return x.nome;
+  return LEGADO[k]||k;
+}
+const tipoNome=r=>r.tipo==='outro'?(r.descricao||'Outro serviço'):nomeTipo(r.tipo);
 const canDel=r=>isAdmin()||(S.perfil&&r.usuario_id===S.perfil.id&&(Date.now()-new Date(r.criado_em).getTime())<864e5);
 
 /* ---------- documentos da moto ---------- */
@@ -613,9 +639,8 @@ function extDoc(f){
 }
 
 function intervalos(){
-  const saved=(S.cfg&&S.cfg.itens)||{};
   const out={};
-  TIPOS.forEach(t=>{const s=saved[t.k];out[t.k]=s?{km:s.km||null,meses:s.meses||null}:{km:t.km,meses:t.meses}});
+  tipos().forEach(t=>{out[t.k]={km:t.km,meses:t.meses}});
   return out;
 }
 function motoStats(m){
@@ -731,7 +756,7 @@ const loadingBox='<div class="empty">Carregando…</div>';
 function renderAll(){
   if(!S.perfil)return;
   fillSelects();renderDash();renderMotos();renderAbast();renderManut();renderDocs();
-  if(isAdmin()){if(!S.ajustesDirty)renderAjustes();renderUsuarios();renderRel();renderAvisos()}
+  if(isAdmin()){renderAjustes();renderUsuarios();renderRel();renderAvisos()}
 }
 function renderDash(){
   const as=ativas();
@@ -739,17 +764,17 @@ function renderDash(){
   const gComb=S.abast.filter(x=>String(x.data).startsWith(mes)&&motoById(x.moto_id)).reduce((s,x)=>s+(x.valor||0),0);
   const gMan=S.manut.filter(x=>String(x.data).startsWith(mes)&&motoById(x.moto_id)).reduce((s,x)=>s+(x.custo||0),0);
   const items=[];
-  as.forEach(m=>{const st=motoStats(m);TIPOS.forEach(t=>{const s=svcStatus(t.k,st);if(s&&(s.level==='bad'||s.level==='warn'))items.push({m,s})})});
+  as.forEach(m=>{const st=motoStats(m);tipos().forEach(t=>{const s=svcStatus(t.k,st);if(s&&(s.level==='bad'||s.level==='warn'))items.push({m,s})})});
   items.sort((a,b)=>(a.s.level===b.s.level?0:a.s.level==='bad'?-1:1)||((a.s.kmLeft==null?1e9:a.s.kmLeft)-(b.s.kmLeft==null?1e9:b.s.kmLeft)));
   const nBad=items.filter(i=>i.s.level==='bad').length;
   $('#stats').innerHTML=
     '<div class="stat"><span class="label-up">Motos ativas</span><b>'+as.length+'</b></div>'+
     '<div class="stat alert'+(items.length?'':' zero')+'"><span class="label-up">Manutenções a fazer</span><b>'+items.length+'</b><span class="small muted">'+(nBad?nBad+' vencida'+(nBad>1?'s':''):'nada vencido')+'</span></div>'+
-    '<div class="stat"><span class="label-up">Combustível no mês</span><b>'+brl.format(gComb)+'</b></div>'+
-    '<div class="stat"><span class="label-up">Manutenção no mês</span><b>'+brl.format(gMan)+'</b></div>';
+    '<div class="stat admin-only"><span class="label-up">Combustível no mês</span><b>'+brl.format(gComb)+'</b></div>'+
+    '<div class="stat admin-only"><span class="label-up">Manutenção no mês</span><b>'+brl.format(gMan)+'</b></div>';
 
   const semOleo=as.filter(m=>!S.manut.some(x=>x.moto_id===m.id&&x.tipo==='oleo'));
-  $('#nudge').innerHTML=(S.loaded&&as.length&&semOleo.length)?
+  $('#nudge').innerHTML=(S.loaded&&as.length&&semOleo.length&&tipos().some(t=>t.k==='oleo'))?
     '<div class="note"><p><b>Sem troca de óleo registrada:</b> '+semOleo.map(m=>esc(m.placa)).join(', ')+'. Lance a última troca (mesmo antiga) para os alertas passarem a valer.</p><button class="btn" type="button" data-act="open-manut" data-tipo="oleo" data-moto="'+esc(semOleo[0].id)+'">Registrar troca de óleo</button></div>':'';
 
   if(!S.loaded){$('#alerts').innerHTML=loadingBox}
@@ -825,7 +850,7 @@ function renderManut(){
   const iv=intervalos();
   $('#manut-status').innerHTML=ms.length?ms.map(m=>{
     const st=motoStats(m);
-    const rows=TIPOS.filter(t=>iv[t.k]&&(iv[t.k].km||iv[t.k].meses)).map(t=>{
+    const rows=tipos().filter(t=>iv[t.k]&&(iv[t.k].km||iv[t.k].meses)).map(t=>{
       const s=svcStatus(t.k,st);
       const ultima=s.last?fmtD(s.last.data)+' · '+nf0.format(s.last.km)+' km':'—';
       const prox=s.last?[s.dueKm!==null?nf0.format(s.dueKm)+' km':'',s.dueDate?fmtD(s.dueDate):''].filter(Boolean).join(' ou '):'—';
@@ -842,11 +867,21 @@ function renderManut(){
     '<div class="empty"><b>Nenhuma manutenção registrada</b>Registre trocas de óleo e outros serviços para ativar os alertas.</div>';
 }
 
+function lerInputsIntervalos(){
+  const o={};
+  tipos().forEach(t=>{const a=$('#iv-km-'+t.k),b=$('#iv-me-'+t.k);if(a&&b)o[t.k]={km:a.value,me:b.value}});
+  return o;
+}
 function renderAjustes(){
   const iv=intervalos();
-  $('#ajustes-body').innerHTML=TIPOS.filter(t=>t.k!=='outro').map(t=>
-    '<tr><td>'+esc(t.nome)+'</td><td class="r"><input type="text" inputmode="numeric" id="iv-km-'+t.k+'" value="'+(iv[t.k].km||'')+'" style="max-width:120px;text-align:right" aria-label="Km para '+esc(t.nome)+'"></td>'+
-    '<td class="r"><input type="text" inputmode="numeric" id="iv-me-'+t.k+'" value="'+(iv[t.k].meses||'')+'" style="max-width:100px;text-align:right" aria-label="Meses para '+esc(t.nome)+'"></td></tr>').join('');
+  const cur=S.ajustesDirty?lerInputsIntervalos():{};
+  $('#ajustes-body').innerHTML=tipos().map(t=>{
+    const c=cur[t.k],vk=c?c.km:(iv[t.k].km||''),vm=c?c.me:(iv[t.k].meses||''),key='tp:'+t.k,armed=S.armed===key;
+    return '<tr><td>'+esc(t.nome)+(t.custom?' <span class="badge">adicionado</span>':'')+'</td><td class="r"><input type="text" inputmode="numeric" id="iv-km-'+t.k+'" value="'+esc(vk)+'" style="max-width:120px;text-align:right" aria-label="Km para '+esc(t.nome)+'"></td>'+
+    '<td class="r"><input type="text" inputmode="numeric" id="iv-me-'+t.k+'" value="'+esc(vm)+'" style="max-width:100px;text-align:right" aria-label="Meses para '+esc(t.nome)+'"></td>'+
+    '<td class="r"><button class="link danger'+(armed?' armed':'')+'" type="button" data-act="rem-tipo" data-id="'+esc(t.k)+'">'+(armed?'Confirmar':'Remover')+'</button></td></tr>'}).join('');
+  const rm=tiposRemovidos();
+  $('#tipos-removidos').innerHTML=rm.length?'<p class="small muted">Removidos (o histórico foi mantido): '+rm.map(t=>esc(t.nome)+' <button class="link" type="button" data-act="rest-tipo" data-id="'+esc(t.k)+'">Restaurar</button>').join(' · ')+'</p>':'';
 }
 
 function renderUsuarios(){
@@ -868,7 +903,8 @@ function fillSelects(){
     el.innerHTML=(a[2]?'<option value="">Todas as motos</option>':'')+(a[1].length?a[1].map(opt).join(''):(a[2]?'':'<option value="">Nenhuma moto cadastrada</option>'));
     if(v&&[].some.call(el.options,o=>o.value===v))el.value=v;
   });
-  const ts=$('#t-tipo');if(!ts.options.length)ts.innerHTML=TIPOS.map(t=>'<option value="'+t.k+'">'+esc(t.nome)+'</option>').join('');
+  const ts=$('#t-tipo'),tv=ts.value;ts.innerHTML=tipos().concat([{k:'outro',nome:'Outro serviço'}]).map(t=>'<option value="'+esc(t.k)+'">'+esc(t.nome)+'</option>').join('');
+  if(tv&&[].some.call(ts.options,o=>o.value===tv))ts.value=tv;
 }
 
 
@@ -1016,7 +1052,7 @@ function openManut(motoId,tipo){
   setTab('manut');
   $('#form-manut').reset();$('#t-data').value=todayStr();
   fillSelects();if(motoId&&motoById(motoId))$('#t-moto').value=motoId;
-  $('#t-tipo').value=tipo||'oleo';$('#t-outro-box').hidden=$('#t-tipo').value!=='outro';
+  $('#t-tipo').value=tipo||'oleo';if(!$('#t-tipo').value)$('#t-tipo').selectedIndex=0;$('#t-outro-box').hidden=$('#t-tipo').value!=='outro';
   lastKmHint('#t-moto','#t-km-hint');show('#panel-manut');$('#t-km').focus({preventScroll:true});
 }
 function openMoto(id){
@@ -1205,20 +1241,51 @@ $('#form-doc').addEventListener('submit',async e=>{
 $('#form-avisos').addEventListener('submit',e=>{e.preventDefault();salvarAvisos()});
 $('#form-avisos').addEventListener('input',()=>{S.avDirty=true});
 
-async function saveAjustes(){
-  if(!isAdmin())return;
-  const itens={};
-  for(const t of TIPOS.filter(t=>t.k!=='outro')){
+// lê a tabela de intervalos e devolve o objeto completo a gravar (ou null se algum número for inválido)
+function lerItens(){
+  const itens=JSON.parse(JSON.stringify(cfgItens()));
+  for(const t of tipos()){
     const km=$('#iv-km-'+t.k).value.trim(),me=$('#iv-me-'+t.k).value.trim();
     const k=km?kmNum(km):null,m=me?kmNum(me):null;
-    if((km&&!(k>0))||(me&&!(m>0))){toast('Use apenas números maiores que zero em '+t.nome+'.',true);return}
-    itens[t.k]={km:k,meses:m};
+    if((km&&!(k>0))||(me&&!(m>0))){toast('Use apenas números maiores que zero em '+t.nome+'.',true);return null}
+    itens[t.k]=Object.assign({},itens[t.k],{km:k,meses:m});
+    if(t.custom)itens[t.k].nome=t.nome;
   }
-  await busy($('#ajustes-save'),async()=>{
+  return itens;
+}
+async function gravarItens(itens,msg,btn){
+  await busy(btn,async()=>{
     const r=await sb.from('config_intervalos').upsert({id:1,itens});
     if(r.error){dbErr(r.error);return}
-    S.ajustesDirty=false;toast('Intervalos salvos.');await loadAll();
+    S.ajustesDirty=false;S.armed=null;toast(msg);await loadAll();
   });
+}
+async function saveAjustes(){
+  if(!isAdmin())return;
+  const itens=lerItens();if(!itens)return;
+  await gravarItens(itens,'Intervalos salvos.',$('#ajustes-save'));
+}
+const slug=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,24)||'servico';
+$('#form-tipo').addEventListener('submit',async e=>{
+  e.preventDefault();if(!isAdmin())return;
+  const nome=$('#nt-nome').value.trim().replace(/\s+/g,' ');
+  const kmT=$('#nt-km').value.trim(),meT=$('#nt-me').value.trim();
+  const km=kmT?kmNum(kmT):null,me=meT?kmNum(meT):null;
+  if(nome.length<2){toast('Informe o nome do serviço.',true);return}
+  if(tipos().some(t=>t.nome.toLowerCase()===nome.toLowerCase())||nome.toLowerCase()==='outro serviço'){toast('Já existe um serviço com esse nome.',true);return}
+  if((kmT&&!(km>0))||(meT&&!(me>0))||(!km&&!me)){toast('Informe km, meses ou os dois (números maiores que zero).',true);return}
+  const itens=lerItens();if(!itens)return;
+  itens['c_'+slug(nome)+'_'+Date.now().toString(36).slice(-4)]={nome,km,meses:me};
+  await gravarItens(itens,'Serviço adicionado.',$('#nt-add'));
+  $('#form-tipo').reset();
+});
+async function mudarTipo(k,acao){
+  if(!isAdmin())return;
+  const itens=lerItens();if(!itens)return;
+  itens[k]=Object.assign({},itens[k]);
+  if(acao==='remover')itens[k].oculto=true;else delete itens[k].oculto;
+  const n=S.manut.filter(x=>x.tipo===k).length;
+  await gravarItens(itens,acao==='remover'?'Serviço removido da lista'+(n?(n===1?' (o registro antigo continua no histórico).':' (os '+n+' registros antigos continuam no histórico).'):'.'):'Serviço restaurado.');
 }
 
 /* ---------- usuários ---------- */
@@ -1345,8 +1412,13 @@ document.addEventListener('click',async e=>{
     case 'export-manut':exportCsv('manut');break;
     case 'save-ajustes':saveAjustes();break;
     case 'reset-ajustes':
-      TIPOS.filter(t=>t.k!=='outro').forEach(t=>{$('#iv-km-'+t.k).value=t.km||'';$('#iv-me-'+t.k).value=t.meses||''});
+      tipos().filter(t=>!t.custom).forEach(t=>{const b=BASE.find(x=>x.k===t.k);$('#iv-km-'+t.k).value=b.km||'';$('#iv-me-'+t.k).value=b.meses||''});
       S.ajustesDirty=true;break;
+    case 'rem-tipo':{
+      const key='tp:'+id;
+      if(S.armed!==key){arm(key);break}
+      S.armed=null;mudarTipo(id,'remover');break}
+    case 'rest-tipo':mudarTipo(id,'restaurar');break;
     case 'toggle-ativo':{const p=S.perfis.find(x=>x.id===id);if(p)updPerfil(id,{ativo:!p.ativo},p.ativo?'Usuário desativado.':'Usuário ativado.');break}
     case 'toggle-papel':{const p=S.perfis.find(x=>x.id===id);if(p)updPerfil(id,{papel:p.papel==='admin'?'funcionario':'admin'},'Perfil alterado.');break}
     case 'sair':await sb.auth.signOut();break;
